@@ -1,0 +1,15 @@
+{
+  "name": "node-pdf-gen",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
+    "pdfmake": "^0.1.36",
+    "sillyname": "^0.1.0"
+  }
+}
