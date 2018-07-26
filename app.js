@@ -310,7 +310,7 @@ function fillRiskNumbers(riskNumbers) {
                 \\begin{longtable}[l]{ |p{3.5cm} |p{14cm} |}
                 \\hline\n
                 Name & Description\\\\\n
-                \\hline\n\n\n
+                \\hline\n\n\n\n
     `;
 }
 
