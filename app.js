@@ -310,7 +310,7 @@ function fillRiskNumbers(riskNumbers) {
                 \\begin{longtable}[l]{ |p{3.5cm} |p{14cm} |}
                 \\hline\n
                 Name & Description\\\\\n
-                \\hline\n
+                \\hline\n\n\n
     `;
 }
 
@@ -319,7 +319,7 @@ function fillSamplingParamsData(samplingParams) {
                 \\newpage
                 \\section{Section F7: Sampling Paramters}         
                 The Sampling Parameters used in the protocol workflow is as:
-                \\begin{longtable}[l]{ |p{2cm} |p{1.5cm} |p{2.5cm} |p{1cm} |p{1cm} |p{1cm} |p{3cm}}
+                \\begin{longtable}[l]{ |p{2cm} |p{1.5cm} |p{1cm} |p{1cm} |p{}}
                 \\hline\n
                 Name & Risk Id & Product Property & Unit & From & To & Risk Category Number\\\\\n
                 \\hline\n
