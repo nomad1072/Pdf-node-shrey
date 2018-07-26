@@ -1,0 +1,43 @@
+[
+    {
+       "criteriaId": "66e486d1-dad0-4c37-8b4c-824b474dff65",
+       "name": "C1",
+       "rules": [
+          {
+             "type": "ProductProperty",
+             "step": 1,
+             "property": "solubility_factor"
+          },
+          {
+             "type": "RPNCategory",
+             "step": 2,
+             "category": {
+                "name": "Toxicity Risk",
+                "riskID": "R1",
+                "productProperty": "pde",
+                "unit": "mg",
+                "values": [
+                   "1",
+                   "0.1",
+                   "0.01",
+                   "0.001"
+                ],
+                "id": 1
+             }
+          },
+          {
+             "type": "RPNFormula",
+             "step": 3,
+             "formula": {
+                "name": "RPN_overall",
+                "formula": "R1*R2*R3*R4",
+                "description": "risk evaluation from multiple risk factors",
+                "rank": 1,
+                "enabled": true,
+                "id": 1
+             }
+          }
+       ]
+    }
+ ]
+ 

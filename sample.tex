@@ -1,0 +1,197 @@
+
+        \documentclass{article}
+        \usepackage[left=1.5cm, right=5cm, top=2cm]{geometry}
+        \usepackage[utf8]{inputenc}
+        \usepackage{longtable,pdflscape,graphicx}
+        \begin{document}
+        \pagenumbering{gobble}
+        
+                \newpage
+                \section{Section F1: Product Attributes Table}         
+                The product attributes are given below for Product Type: solid
+                \begin{longtable}{ |p{1.5cm} |p{1.7cm} |p{1cm} |p{1.5cm} |p{1.7cm} |p{1cm} |p{1cm} |p{1cm} |p{1cm} |p{1.5cm} |}
+                \hline
+
+                Name & Product Id & API & Solubility Factor & Cleanability Factor & PDE & Min TD & Max TD & Min BS & Strength\\
+
+                \hline
+
+    Product1 & P1 & API1 & 1 & 1 & 0 & 180 & 360 & 440000 & 400\\
+\hline
+Product2 & P2 & API2 & 3 & 3 & 0 & 180 & 360 & 210000 & 400\\
+\hline
+Product3 & P3 & API3 & 5 & 3 & 0 & 300 & 600 & 200000 & 400\\
+\hline
+Product4 & P4 & API4 & 2 & 5 & 1 & 150 & 300 & 200000 & 400\\
+\hline
+
+    \end{longtable}
+    
+        
+        \newpage
+        \section{Section F2: Equipment Attributes Table}
+        The equipment attributes are given below:
+        \begin{longtable}[l]{ |p{3cm} |p{3cm} |p{2cm}|}
+        \hline
+
+        Equipment Id & Equipment Name & Surface Area\\
+
+        \hline
+
+    EQ1 & Equipment1 & 10000\\
+\hline
+EQ2 & Equipment2 & 20000\\
+\hline
+EQ3 & Equipment3 & 40000\\
+\hline
+
+    \end{longtable}
+    
+        
+        \newpage
+        \section{Section F3: Equipment Group Attributes}
+        The Equipment Group attributes are given below:
+        \begin{longtable}[l]{ |p{2cm} |p{2cm} |p{2.5cm} |p{6cm}|}
+        \hline
+
+        Name & Group Id & Product Type & Equipments\\
+
+        \hline
+
+    Train1 & EqGrp1 & solid & Equipment1, Equipment2, Equipment3\\
+\hline
+
+    \end{longtable}
+    
+        
+        \newpage
+        \section{Section F4: PE Matrix}
+        The PE (Product-Equipment) relationship is described by the table given below:
+        \begin{longtable}[l]{ |p{3cm} |p{5cm} |p{3cm}|}
+        \hline
+
+        Product Id & Equipment Used & Surface Area\\
+
+        \hline
+
+    P1 & EQ1, EQ2, EQ3 & 70000\\
+\hline
+P2 & EQ1, EQ2 & 30000\\
+\hline
+P3 & EQ1, EQ3 & 50000\\
+\hline
+P4 & EQ1, EQ2, EQ3 & 70000\\
+\hline
+
+    \end{longtable}
+    The PE (Product-Equipment) relationship is described by the table given below:
+    \begin{longtable}[l]{ |p{3cm} |p{5cm} |p{3cm}|}
+    \hline
+
+    Product Id & Equipment Used & Surface Area\\
+
+    \hline
+
+    Equipment1 & P1, P2, P3, P4 & 10000\\
+\hline
+Equipment2 & P1, P2, P4 & 20000\\
+\hline
+Equipment3 & P1, P3, P4 & 40000\\
+\hline
+
+    \end{longtable}
+    
+        
+        \newpage
+        \section{Section F5: Calculation Variables}
+        The various variables used in the evaluation of the worst case limits and molecules are given in the table given below:
+        \begin{longtable}[l]{ |p{5cm} |p{2cm} |p{1.5cm} |p{6cm} |p{2.5cm}|  }
+        \hline
+
+        Name & Short Name & Unit & Description & Default Value\\
+
+        \hline
+
+    Body weight (for LD50 dose) & bw & kg & body weight of patient taking next product & 60\\
+\hline
+Equipment Verification Period & verifyPeriod & month & The frequency at which equipment needs to be verified. & 3\\
+\hline
+Modification factor & mf &  & Cumulative modifying factor, selected by the toxicologist. generally no more than 1000 & 1000\\
+\hline
+Safety Factor - Solids & sf\_solid &  & Safety Factor for Solids drug dosage & 1000\\
+\hline
+
+    \end{longtable}
+    
+        
+    \newpage
+    \section{Section F6: MAC Formula}
+    The below set of formula are used to calculate the MAC Limits. Please note that the MAC Surface Area is taken as the default limit here.
+    \begin{longtable}[l]{ |p{2cm} |p{1.5cm} |p{1.5cm} |p{5cm} |p{6cm}|  }
+    \hline
+
+    Name & Sampling Type & Product Type & Formula & Description\\
+
+    \hline
+
+    MAC\_dosage & swab & solid & (1 / sf\_solid) * (min\_td\_a) * (1 / max\_td\_b) * (min\_bs\_b) * (1 / area\_shared) & based on minimum daily dose of the drug active in a maximum daily dose of the next drug product\\
+\hline
+MAC\_general & swab & solid & (1 / 1e+5) * (min\_bs\_b) * (1 / area\_shared) & general 10ppm limit to be considered when it is lower than dosage/toxicity based limits or when dosage/toxicity data is not available\\
+\hline
+MAC\_toxicity & swab & solid & (pde\_a) * (1 / max\_td\_b) * (min\_bs\_b) * (1 / area\_shared) & based on Risk-MaPP Acceptable Daily Exposure (ADE) approach\\
+\hline
+
+    \end{longtable}
+    
+        
+                \newpage
+                \section{Section F7: Sampling Paramters}         
+                The Sampling Parameters used in the protocol workflow is as:
+                \begin{longtable}[l]{ |p{3.6cm} |p{1cm} |}
+                \hline
+
+                Sampling Parameter & value\\
+
+                \hline
+
+    swab & 40\\
+\hline
+sda & 20\\
+\hline
+
+    \end{longtable}
+    
+        
+                \newpage
+                \section{Section G2: Risk Formula}         
+                Risk Priority Number(s) are defined as per the formula given in the table below:
+                \begin{longtable}[l]{ |p{2cm} |p{8cm} |p{1.2cm} |p{3cm} |}
+                \hline
+
+                Name & Description & Rank & Formula\\
+
+                \hline
+
+    RPN\_overall & risk evaluation from multiple risk factors & 1 & R1*R2*R3*R4\\
+\hline
+
+    \end{longtable}
+    
+        
+                \newpage
+                \section{Section H: Current Cleaning Limit Policy}         
+                Current Cleaning Limit Policy given in the table below:
+                \begin{longtable}[l]{ |p{3.5cm} |p{14cm} |}
+                \hline
+
+                Name & Description\\
+
+                \hline
+
+    Default & Recommended cleaning limit policy based on latest regulatory   guideline. Acceptance limit is always equal to HBEL based limit and site acceptance limit is either based   on dosage based limit if it significantly lower than HBEL or is a lower ratio of HBEL itself\\
+\hline
+
+    \end{longtable}
+    
+        \end{document}
+        

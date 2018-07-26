@@ -1,0 +1,18 @@
+{
+  "name": "node-pdf-gen",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
+    "node-latex": "^2.4.4",
+    "pdfmake": "^0.1.36",
+    "puppeteer": "^1.6.0-next.1532381444032",
+    "sillyname": "^0.1.0",
+    "wkhtmltopdf": "^0.3.4"
+  }
+}
