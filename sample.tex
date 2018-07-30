@@ -5,18 +5,13 @@
         \usepackage{longtable,pdflscape,graphicx}
         \begin{document}
         \pagenumbering{gobble}
-        
-                \newpage
-                \section{Section F1: Product Attributes Table}         
-                The product attributes are given below for Product Type: solid
-                \begin{longtable}{ |p{1.5cm} |p{1.7cm} |p{1cm} |p{1.5cm} |p{1.7cm} |p{1cm} |p{1cm} |p{1cm} |p{1cm} |p{1.5cm} |}
-                \hline
+        \begin{longtable}[l]{|p{1.5cm}|p{1.7cm}|p{1cm}|p{1.5cm}|p{1.7cm}|p{1cm}|p{1cm}|p{1cm}|p{1cm}|p{1.5cm}|}
 
-                Name & Product Id & API & Solubility Factor & Cleanability Factor & PDE & Min TD & Max TD & Min BS & Strength\\
+\hline
+Name & Product Id & API & Solubility Factor & Cleanability Factor & PDE & Min TD & Max TD & Min BS & Strength\\
+\hline
 
-                \hline
-
-    Product1 & P1 & API1 & 1 & 1 & 0 & 180 & 360 & 440000 & 400\\
+Product1 & P1 & API1 & 1 & 1 & 0 & 180 & 360 & 440000 & 400\\
 \hline
 Product2 & P2 & API2 & 3 & 3 & 0 & 180 & 360 & 210000 & 400\\
 \hline
@@ -27,18 +22,13 @@ Product4 & P4 & API4 & 2 & 5 & 1 & 150 & 300 & 200000 & 400\\
 
     \end{longtable}
     
-        
-        \newpage
-        \section{Section F2: Equipment Attributes Table}
-        The equipment attributes are given below:
-        \begin{longtable}[l]{ |p{3cm} |p{3cm} |p{2cm}|}
-        \hline
+        \begin{longtable}[l]{|p{2.5cm}|p{3cm}|p{3.5cm}|}
 
-        Equipment Id & Equipment Name & Surface Area\\
+\hline
+Equipment Id & Equipment Name & Surface Area\\
+\hline
 
-        \hline
-
-    EQ1 & Equipment1 & 10000\\
+EQ1 & Equipment1 & 10000\\
 \hline
 EQ2 & Equipment2 & 20000\\
 \hline
@@ -47,18 +37,67 @@ EQ3 & Equipment3 & 40000\\
 
     \end{longtable}
     
-        
-        \newpage
-        \section{Section F3: Equipment Group Attributes}
-        The Equipment Group attributes are given below:
-        \begin{longtable}[l]{ |p{2cm} |p{2cm} |p{2.5cm} |p{6cm}|}
-        \hline
+        \begin{longtable}[l]{|p{2.5cm}|p{1.5cm}|p{1.8cm}|p{6cm}|}
 
-        Name & Group Id & Product Type & Equipments\\
+\hline
+Name & Group Id & Product Type & Equipment\\
+\hline
 
-        \hline
+Train1 & EqGrp1 & solid & Equipment1, Equipment2, Equipment3\\
+\hline
 
-    Train1 & EqGrp1 & solid & Equipment1, Equipment2, Equipment3\\
+    \end{longtable}
+    
+        \begin{longtable}[l]{|p{2.5cm}|p{2cm}|p{1.2cm}|p{8cm}|p{2cm}|}
+
+\hline
+Name & Short Name & Unit & Description & Default Value\\
+\hline
+
+Body weight (for LD50 dose) & bw & kg & body weight of patient taking next product & 60\\
+\hline
+Equipment Verification Period & verifyPeriod & month & The frequency at which equipment needs to be verified. & 3\\
+\hline
+Modification factor & mf &  & Cumulative modifying factor, selected by the toxicologist. generally no more than 1000 & 1000\\
+\hline
+Safety Factor - Solids & sf\_solid &  & Safety Factor for Solids drug dosage & 1000\\
+\hline
+
+    \end{longtable}
+    
+        \begin{longtable}[l]{|p{2.5cm}|p{1.5cm}|p{1.2cm}|p{5cm}|p{6cm}|}
+
+\hline
+Name & Sampling Type & Product Type & Formula & Description\\
+\hline
+
+MAC\_dosage & swab & solid & (1 / sf\_solid) * (min\_td\_a) * (1 / max\_td\_b) * (min\_bs\_b) * (1 / area\_shared) & based on minimum daily dose of the drug active in a maximum daily dose of the next drug product\\
+\hline
+MAC\_general & swab & solid & (1 / 1e+5) * (min\_bs\_b) * (1 / area\_shared) & general 10ppm limit to be considered when it is lower than dosage/toxicity based limits or when dosage/toxicity data is not available\\
+\hline
+MAC\_toxicity & swab & solid & (pde\_a) * (1 / max\_td\_b) * (min\_bs\_b) * (1 / area\_shared) & based on Risk-MaPP Acceptable Daily Exposure (ADE) approach\\
+\hline
+
+    \end{longtable}
+    
+        \begin{longtable}[l]{|p{1.5cm}|p{14cm}|}
+
+\hline
+Name & Description\\
+\hline
+
+Default & Recommended cleaning limit policy based on latest regulatory   guideline. Acceptance limit is always equal to HBEL based limit and site acceptance limit is either based   on dosage based limit if it significantly lower than HBEL or is a lower ratio of HBEL itself\\
+\hline
+
+    \end{longtable}
+    
+        \begin{longtable}[l]{|p{2cm}|p{3cm}|p{1.5cm}|p{3cm}|}
+
+\hline
+Name & Description & Rank & Formula\\
+\hline
+
+RPN\_overall & risk evaluation from multiple risk factors & 1 & R1*R2*R3*R4\\
 \hline
 
     \end{longtable}
@@ -101,94 +140,74 @@ Equipment3 & P1, P3, P4 & 40000\\
 
     \end{longtable}
     
-        
-        \newpage
-        \section{Section F5: Calculation Variables}
-        The various variables used in the evaluation of the worst case limits and molecules are given in the table given below:
-        \begin{longtable}[l]{ |p{5cm} |p{2cm} |p{1.5cm} |p{6cm} |p{2.5cm}|  }
-        \hline
+        \begin{longtable}[l]{|p{1.5cm}|p{2cm}|p{3cm}|p{3cm}|p{3cm}|p{3cm}|}
 
-        Name & Short Name & Unit & Description & Default Value\\
+\hline
+ID & Name & Toxicity based MAC Swab Extract & Dosage based MAC Swab Extract & General MAC Swab Extract  & Site Acceptance limit MAC Swab Extract\\
+\hline
 
-        \hline
-
-    Body weight (for LD50 dose) & bw & kg & body weight of patient taking next product & 60\\
+EQ1 & Equipment1 & 3.1111111111111103 & 1.9999999999999993 & 0.05714285714285712 & 1.5555555555555551\\
 \hline
-Equipment Verification Period & verifyPeriod & month & The frequency at which equipment needs to be verified. & 3\\
+EQ2 & Equipment2 & 3.1111111111111103 & 3.428571428571427 & 0.05714285714285712 & 1.5555555555555551\\
 \hline
-Modification factor & mf &  & Cumulative modifying factor, selected by the toxicologist. generally no more than 1000 & 1000\\
-\hline
-Safety Factor - Solids & sf\_solid &  & Safety Factor for Solids drug dosage & 1000\\
+EQ3 & Equipment3 & 5.999999999999996 & 1.9999999999999993 & 0.05714285714285712 & 2.999999999999998\\
 \hline
 
     \end{longtable}
     
-        
-    \newpage
-    \section{Section F6: MAC Formula}
-    The below set of formula are used to calculate the MAC Limits. Please note that the MAC Surface Area is taken as the default limit here.
-    \begin{longtable}[l]{ |p{2cm} |p{1.5cm} |p{1.5cm} |p{5cm} |p{6cm}|  }
-    \hline
+        \begin{longtable}[l]{|p{3cm}|p{2cm}|p{3cm}|p{1.3cm}|p{1cm}|p{1cm}|p{4cm}|}
 
-    Name & Sampling Type & Product Type & Formula & Description\\
-
-    \hline
-
-    MAC\_dosage & swab & solid & (1 / sf\_solid) * (min\_td\_a) * (1 / max\_td\_b) * (min\_bs\_b) * (1 / area\_shared) & based on minimum daily dose of the drug active in a maximum daily dose of the next drug product\\
 \hline
-MAC\_general & swab & solid & (1 / 1e+5) * (min\_bs\_b) * (1 / area\_shared) & general 10ppm limit to be considered when it is lower than dosage/toxicity based limits or when dosage/toxicity data is not available\\
-\hline
-MAC\_toxicity & swab & solid & (pde\_a) * (1 / max\_td\_b) * (min\_bs\_b) * (1 / area\_shared) & based on Risk-MaPP Acceptable Daily Exposure (ADE) approach\\
+Name & Risk ID & Product Property & Unit & From & To & Risk Category Number\\
 \hline
 
-    \end{longtable}
-    
-        
-                \newpage
-                \section{Section F7: Sampling Paramters}         
-                The Sampling Parameters used in the protocol workflow is as:
-                \begin{longtable}[l]{ |p{3.6cm} |p{1cm} |}
-                \hline
-
-                Sampling Parameter & value\\
-
-                \hline
-
-    swab & 40\\
+Toxicity Risk & R1 & pde & mg & 0 & 0.001 & 5\\
 \hline
-sda & 20\\
+Toxicity Risk & R1 & pde & mg & 0.001 & 0.01 & 4\\
 \hline
-
-    \end{longtable}
-    
-        
-                \newpage
-                \section{Section G2: Risk Formula}         
-                Risk Priority Number(s) are defined as per the formula given in the table below:
-                \begin{longtable}[l]{ |p{2cm} |p{8cm} |p{1.2cm} |p{3cm} |}
-                \hline
-
-                Name & Description & Rank & Formula\\
-
-                \hline
-
-    RPN\_overall & risk evaluation from multiple risk factors & 1 & R1*R2*R3*R4\\
+Toxicity Risk & R1 & pde & mg & 0.01 & 0.1 & 3\\
 \hline
-
-    \end{longtable}
-    
-        
-                \newpage
-                \section{Section H: Current Cleaning Limit Policy}         
-                Current Cleaning Limit Policy given in the table below:
-                \begin{longtable}[l]{ |p{3.5cm} |p{14cm} |}
-                \hline
-
-                Name & Description\\
-
-                \hline
-
-    Default & Recommended cleaning limit policy based on latest regulatory   guideline. Acceptance limit is always equal to HBEL based limit and site acceptance limit is either based   on dosage based limit if it significantly lower than HBEL or is a lower ratio of HBEL itself\\
+Toxicity Risk & R1 & pde & mg & 0.1 & 1 & 2\\
+\hline
+Toxicity Risk & R1 & pde & mg & 1 & Infinity & 1\\
+\hline
+Potency Risk & R2 & min\_td & mg & 0 & 0.001 & 5\\
+\hline
+Potency Risk & R2 & min\_td & mg & 0.001 & 0.01 & 4\\
+\hline
+Potency Risk & R2 & min\_td & mg & 0.01 & 0.1 & 3\\
+\hline
+Potency Risk & R2 & min\_td & mg & 0.1 & 1 & 2\\
+\hline
+Potency Risk & R2 & min\_td & mg & 1 & Infinity & 1\\
+\hline
+Solubility Risk & R3 & solubility\_factor &  & 0 & 1 & 1\\
+\hline
+Solubility Risk & R3 & solubility\_factor &  & 1 & 2 & 2\\
+\hline
+Solubility Risk & R3 & solubility\_factor &  & 2 & 3 & 3\\
+\hline
+Solubility Risk & R3 & solubility\_factor &  & 3 & 4 & 4\\
+\hline
+Solubility Risk & R3 & solubility\_factor &  & 4 & 5 & 5\\
+\hline
+Solubility Risk & R3 & solubility\_factor &  & 5 & Infinity & 6\\
+\hline
+Cleanability Risk & R4 & cleanability\_factor &  & 0 & 1 & 1\\
+\hline
+Cleanability Risk & R4 & cleanability\_factor &  & 1 & 2 & 2\\
+\hline
+Cleanability Risk & R4 & cleanability\_factor &  & 2 & 3 & 3\\
+\hline
+Cleanability Risk & R4 & cleanability\_factor &  & 3 & 4 & 4\\
+\hline
+Cleanability Risk & R4 & cleanability\_factor &  & 4 & 5 & 5\\
+\hline
+Cleanability Risk & R4 & cleanability\_factor &  & 5 & 6 & 6\\
+\hline
+Cleanability Risk & R4 & cleanability\_factor &  & 6 & 7 & 7\\
+\hline
+Cleanability Risk & R4 & cleanability\_factor &  & 7 & 10 & 8\\
 \hline
 
     \end{longtable}

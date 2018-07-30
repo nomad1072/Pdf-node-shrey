@@ -98,27 +98,23 @@ function readFile(fileName) {
 }
 
 function fillEquipmentGroupsData(equipmentGroups) {
-    let str = `
-        \\newpage
-        \\section{Section F3: Equipment Group Attributes}
-        The Equipment Group attributes are given below:
-        \\begin{longtable}[l]{ |p{2cm} |p{2cm} |p{2.5cm} |p{6cm}|}
-        \\hline\n
-        Name & Group Id & Product Type & Equipments\\\\\n
-        \\hline\n
-    `;
-    equipmentGroups.forEach((eq) => {
+    let headers = [["Name", "Group Id", "Product Type", "Equipment"]];
+    let body = equipmentGroups.reduce((a, eq) => {
         let some = eq.equipments.reduce((a,b) => {
             return a.concat(b.name)
         }, []);
         const eqsString = some.join(", ")
-        str += `${eq.name} & ${eq.groupId} & ${eq.productType.name} & ${eqsString}\\\\\n`
-        str += `\\hline\n`
-    });
-    str += `
-    \\end{longtable}
-    `
-    return str;
+        a.push([`${eq.name} & ${eq.groupId} & ${eq.productType.name} & ${eqsString}`]);
+        return a;
+    }, []);
+    let table = [...headers, ...body];
+    let columnWidths = ["2.5cm", "1.5cm", "1.8cm", "6cm"];
+    let data = {
+        table,
+        columnWidths,
+        leftAlign: true
+    }
+    return tableComponent(data);
 }
 
 function escapeUnderscore(str) {
@@ -130,50 +126,39 @@ function escapeUnderscore(str) {
             finalStr += str[i];
         }
     }
-    console.log('Final String: <<<<', finalStr);
     return finalStr;
 }
 
 function fillFormulaData(formulas) {
-    let str = `
-    \\newpage
-    \\section{Section F6: MAC Formula}
-    The below set of formula are used to calculate the MAC Limits. Please note that the MAC Surface Area is taken as the default limit here.
-    \\begin{longtable}[l]{ |p{2cm} |p{1.5cm} |p{1.5cm} |p{5cm} |p{6cm}|  }
-    \\hline\n
-    Name & Sampling Type & Product Type & Formula & Description\\\\\n
-    \\hline\n
-    `;
-    formulas.forEach((f) => {
-        console.log('Name: <<<<', f.name);
-        str += `${escapeUnderscore(f.name)} & ${f.samplingType} & ${f.productType.name} & ${escapeUnderscore(f.formula)} & ${f.description}\\\\\n`
-        str += `\\hline\n`
-    });
-    str += `
-    \\end{longtable}
-    `;
-    return str;
-
+    let headers = [["Name", "Sampling Type", "Product Type", "Formula", "Description"]];
+    let body = formulas.reduce((a, f) => {
+        a.push([`${escapeUnderscore(f.name)}`, `${f.samplingType}` , `${f.productType.name}` , `${escapeUnderscore(f.formula)}` , `${f.description}`]);
+        return a;
+    }, []);
+    let table = [...headers, ...body];
+    let columnWidths = ["2.5cm", "1.5cm", "1.2cm", "5cm", "6cm"];
+    let data = {
+        table,
+        columnWidths,
+        leftAlign: true
+    }
+    return tableComponent(data);
 }
 
 function fillVariablesData(variables) {
-    let str = `
-        \\newpage
-        \\section{Section F5: Calculation Variables}
-        The various variables used in the evaluation of the worst case limits and molecules are given in the table given below:
-        \\begin{longtable}[l]{ |p{5cm} |p{2cm} |p{1.5cm} |p{6cm} |p{2.5cm}|  }
-        \\hline\n
-        Name & Short Name & Unit & Description & Default Value\\\\\n
-        \\hline\n
-    `;
-    variables.forEach((v) => {
-        str += `${v.name} & ${escapeUnderscore(v.shortName)} & ${v.unit} & ${v.description} & ${v.defaultValue}\\\\\n`
-        str += `\\hline\n`
-    });
-    str += `
-    \\end{longtable}
-    `;
-    return str;
+    let headers = [["Name", "Short Name", "Unit", "Description", "Default Value"]];
+    let body = variables.reduce((a, v) => {
+        a.push([`${v.name}`, `${escapeUnderscore(v.shortName)}`, `${v.unit}`, `${v.description}`, `${v.defaultValue}`]);
+        return a;
+    }, []);
+    let table = [...headers, ...body];
+    let columnWidths = ["2.5cm", "2cm", "1.2cm", "8cm", "2cm"];
+    let data = {
+        table,
+        columnWidths,
+        leftAlign: true
+    }
+    return tableComponent(data);
 }
 
 function fillPEMatrixData(products, equipments) {
@@ -223,96 +208,153 @@ function fillPEMatrixData(products, equipments) {
 }
 
 function fillEquipmentsData(equipments) {
-    let str = `
-        \\newpage
-        \\section{Section F2: Equipment Attributes Table}
-        The equipment attributes are given below:
-        \\begin{longtable}[l]{ |p{3cm} |p{3cm} |p{2cm}|}
-        \\hline\n
-        Equipment Id & Equipment Name & Surface Area\\\\\n
-        \\hline\n
-    `;
-    equipments.forEach((e) => {
-        str += `${e.equipment_id} & ${e.name} & ${e.surface_area.value}\\\\\n`
-        str += `\\hline\n`
-    });
-    str += `
-    \\end{longtable}
-    `
-    return str;
+    let headers = [["Equipment Id", "Equipment Name", "Surface Area"]];
+    let body = equipments.reduce((a, equipment) => {
+        a.push([`${equipment.equipment_id}`, `${equipment.name}`, `${equipment.surface_area.value}`]);
+        return a;
+    }, []);
+    let table = [...headers, ...body];
+    let columnWidths = ["2.5cm", "3cm", "3.5cm"];
+    let data = {
+        table,
+        columnWidths,
+        leftAlign: true
+    }
+    return tableComponent(data);
 }
 
 function fillProductsData(products) {
-    let str = `
-                \\newpage
-                \\section{Section F1: Product Attributes Table}         
-                The product attributes are given below for Product Type: solid
-                \\begin{longtable}{ |p{1.5cm} |p{1.7cm} |p{1cm} |p{1.5cm} |p{1.7cm} |p{1cm} |p{1cm} |p{1cm} |p{1cm} |p{1.5cm} |}
-                \\hline\n
-                Name & Product Id & API & Solubility Factor & Cleanability Factor & PDE & Min TD & Max TD & Min BS & Strength\\\\\n
-                \\hline\n
-    `;
-    products.forEach((product) => {
-        str += `${product.name} & ${product.product_id} & ${product.api_name} & ${product.solubility_factor.value} & ${Math.round(+product.cleanability_factor.value)} & ${Math.round(+product.pde.value)} & ${product.min_td.value} & ${product.max_td.value} & ${Math.round(+product.min_bs.value)} & ${Math.round(+product.strength.value)}\\\\\n`
-        str += `\\hline\n`
-    });
-    str += `
-    \\end{longtable}
-    `
-    return str;
+    let headers = [["Name", "Product Id", "API", "Solubility Factor", "Cleanability Factor", "PDE", "Min TD", "Max TD", "Min BS", "Strength"]];
+    let body = products.reduce((a,product) => {
+        a.push([`${product.name}`, `${product.product_id}`, `${product.api_name}`, `${product.solubility_factor.value}`, `${Math.round(+product.cleanability_factor.value)}`, `${Math.round(+product.pde.value)}`, `${product.min_td.value}`, `${product.max_td.value}`, `${Math.round(+product.min_bs.value)}`, `${Math.round(+product.strength.value)}`])
+        return a;
+    }, []);
+    let table = [...headers, ...body];
+    let columnWidths = ["1.5cm", "1.7cm", "1cm", "1.5cm", "1.7cm", "1cm", "1cm", "1cm", "1cm", "1.5cm"]
+    let data = {
+        table,
+        columnWidths,
+        leftAlign: true
+    };
+    return tableComponent(data);
 }
 
 function fillRpnFormulaData(rpnFormulas) {
-    let str = `
-                \\newpage
-                \\section{Section G2: Risk Formula}         
-                Risk Priority Number(s) are defined as per the formula given in the table below:
-                \\begin{longtable}[l]{ |p{2cm} |p{8cm} |p{1.2cm} |p{3cm} |}
-                \\hline\n
-                Name & Description & Rank & Formula\\\\\n
-                \\hline\n
-    `;
-    rpnFormulas.forEach((rpnFormula) => {
-        str += `${escapeUnderscore(rpnFormula.name)} & ${rpnFormula.description} & ${rpnFormula.rank} & ${rpnFormula.formula}\\\\\n`
-        str += `\\hline\n`
-    });
-    str += `
-    \\end{longtable}
-    `
-    return str;
+    let headers = [["Name", "Description", "Rank", "Formula"]];
+    let body = rpnFormulas.reduce((a, rpnFormula) => {
+        a.push([`${escapeUnderscore(rpnFormula.name)}`, `${rpnFormula.description}`, `${rpnFormula.rank}` , `${rpnFormula.formula}`])
+        return a;
+    }, []);
+    let table = [...headers, ...body];
+    let columnWidths = ["2cm", "3cm", "1.5cm", "3cm"]
+    let data = {
+        table,
+        columnWidths,
+        leftAlign: true
+    };
+    return tableComponent(data);
 }
 
 function fillCleaningLimitData(cleaningLimits) {
-    let str = `
-                \\newpage
-                \\section{Section H: Current Cleaning Limit Policy}         
-                Current Cleaning Limit Policy given in the table below:
-                \\begin{longtable}[l]{ |p{3.5cm} |p{14cm} |}
-                \\hline\n
-                Name & Description\\\\\n
-                \\hline\n
-    `;
-    cleaningLimits.forEach((cl) => {
-        str += `${cl.name} & ${cl.description}\\\\\n`
-        str += `\\hline\n`
-    })
-    str += `
-    \\end{longtable}
-    `
-    return str;
+    let headers = [["Name", "Description"]];
+    let body = cleaningLimits.reduce((a, cl) => {
+        a.push([`${cl.name}`, `${cl.description}`])
+        return a;
+    }, []);
+    let table = [...headers, ...body];
+    let columnWidths = ["1.5cm", "14cm"]
+    let data = {
+        table,
+        columnWidths,
+        leftAlign: true
+    };
+    return tableComponent(data);
 }
 
-function fillRiskNumbers(riskNumbers) {
-    let str = `
-                \\newpage
-                \\section{Section G1: Risk Numbers}         
-                Risk numbers are based on various properties as given in the table below. Risk numbers are categorized based on a lower bound and an upper bound in every risk category.
-                \\begin{longtable}[l]{ |p{3.5cm} |p{14cm} |}
-                \\hline\n
-                Name & Description\\\\\n
-                \\hline\n\n\n\n
-    `;
-}
+function calculateCategories(
+    valuesIn,
+    order,
+    productProperty
+  ) {
+    let values = [...valuesIn];
+  
+    let updateValues = [];
+    if (order === "DESC") {
+      values.push(0);
+      values = values.reverse();
+  
+      updateValues = values.map((x, i) => {
+        const riskNumber = values.length - i;
+        const highValue = i === values.length - 1 ? Infinity : values[i + 1];
+        return {
+          lowValue: x,
+          highValue,
+          riskNumber
+        };
+      });
+    } else if (order === "ASC") {
+      let numberLength = values.unshift(0);
+  
+      const maxValue = productProperty === "cleanability_factor" ? 10 : Infinity;
+      updateValues = values.map((x, i) => {
+        const riskNumber = i + 1;
+        const isLastIndex = i === numberLength - 1;
+        const highValue = isLastIndex ? maxValue : values[i + 1];
+        return {
+          lowValue: x,
+          highValue,
+          riskNumber
+        };
+      });
+    }
+  
+    return updateValues;
+  }
+
+function fillRPNNumbers(riskNumbers) {
+    
+    const headers = [[
+      "Name",
+      "Risk ID",
+      "Product Property",
+      "Unit",
+      "From",
+      "To",
+      "Risk Category Number"
+    ]];
+  
+    const body = riskNumbers.reduce((a, risk) => {
+      const order = risk.values[0] > risk.values[1] ? "DESC" : "ASC";
+      const values = risk.values ? risk.values.map(x => +x) : [];
+      const rpnCategories = calculateCategories(
+        values,
+        order,
+        risk.productProperty
+      );
+      const entries = rpnCategories.map(rpnCategory => [
+        risk.name,
+        risk.riskID,
+        escapeUnderscore(risk.productProperty),
+        risk.unit,
+        rpnCategory.lowValue,
+        rpnCategory.highValue,
+        rpnCategory.riskNumber
+      ]);
+      return [...a, ...entries];
+    }, []);
+
+    let table = [...headers, ...body];
+
+    let columnWidths = ["3cm", "2cm", "3cm", "1.3cm", "1cm", "1cm", "4cm"]
+    let data = {
+        table,
+        columnWidths,
+        leftAlign: true
+    };
+
+    return tableComponent(data);
+
+  }
 
 function fillSamplingParamsData(samplingParams) {
     let str = `
@@ -335,6 +377,93 @@ function fillSamplingParamsData(samplingParams) {
     return str;
 }
 
+function formTableHeaders(headers, columnWidths) {
+    if(headers.length !== columnWidths.length) {
+        throw new Error('Headers length and columnWidths length do not match')
+    }
+    let str = `\\begin{longtable}[l]{|`;
+    const len = columnWidths.length;
+    columnWidths.forEach((a, key) => {
+        const colWidth = `p{${a}}|`
+        str += colWidth;
+    })
+    str += '}\n'
+    str += "\n\\hline\n"
+    headers.forEach((a, key) => {
+        if(key !== len-1) {
+            const head = `${a} & `;
+            str += head;
+        } else {
+            str += `${a}\\\\\n`
+        }
+    });
+    str += '\\hline\n';
+    return str;
+}
+
+function formTableBody(tableBody) {
+    let str = '';
+    tableBody.forEach((tableRecord) => {
+        str += tableRecord.join(" & ");
+        str += `\\\\\n`
+        str += `\\hline\n`
+    });
+    str += `
+    \\end{longtable}
+    `
+    return str;
+}
+
+function tableComponent(data) {
+    const { table, columnWidths, leftAlign } = data;
+    let tableHeadersString  = formTableHeaders(table[0], columnWidths)
+    let tableBody = table.slice(1);
+    let tableBodyString = formTableBody(tableBody);
+    let tableString = `${tableHeadersString}\n${tableBodyString}`
+    return tableString;
+}
+
+const MACMetrics = {
+    // L1: "MAC Next Product",
+    // L2: "MAC Next Batch",
+    L3: "MAC Surface Area",
+    L4: "MAC Swab",
+    L5: "MAC Swab Extract"
+  };
+function fillEquipmentWiseProductMACTable(
+    equipments,
+    eqWiseMAC
+  ) {
+    const headers = [["ID","Name",`Toxicity based ${MACMetrics["L5"]}`,`Dosage based ${MACMetrics["L5"]}` ,`General ${MACMetrics["L5"]} `, `Site Acceptance limit ${MACMetrics["L5"]}`]];
+    
+    // const formatMAC = formatMACPPM('ppm');
+    const body = equipments
+      .filter(
+        e =>
+          eqWiseMAC[e.id].productLimits !== null
+      )
+      .map(e => {
+        const macs = eqWiseMAC[e.id].productLimits;
+        return [
+          e.equipment_id,
+          e.name,
+          macs.macToxicity.L5,
+          macs.macDosage.L5,
+          macs.macGeneral.L5,
+          macs.alertLimit.L5
+        ];
+      });
+      
+      let table = [...headers, ...body];
+      let columnWidths = ["1.5cm", "2cm", "3cm", "3cm", "3cm", "3cm"]
+      let data = {
+          table,
+          columnWidths,
+          leftAlign: true
+      };
+      return tableComponent(data);
+  }
+
 app.get('/mac_protocol', async (req, res) => {
     try {
         // reportObject = await readFile('reportObject.json');
@@ -345,11 +474,15 @@ app.get('/mac_protocol', async (req, res) => {
         const equipmentGroups = reportObject.evaluation.snapshot.equipmentGroups;
         const variables = reportObject.evaluation.snapshot.variables;
         const MACformulas = reportObject.evaluation.snapshot.macFormulas;
-        const rpnCategories = reportObject.rpnCategories;
+        const rpnCategories = reportObject.evaluation.snapshot.rpnCategories;
         const rpnFormulas = reportObject.evaluation.snapshot.rpnFormulas;
         const selectionCriteria = reportObject.selectionCriteria;
         const defaultUnits = reportObject.defaultUnits;
         const cleaningLimitPolicies = reportObject.evaluation.snapshot.cleaningLimitPolicies;
+        const equipmentWiseMac = reportObject.content.macCalculation.macLimits.equipmentWiseMac;
+        const equipmentGroupWiseMac = reportObject.content.macCalculation.macLimits.equipmentGroupWiseMac;
+
+
         const productsData = fillProductsData(products);
         const equipmentsData = fillEquipmentsData(equipments);
         const equipmentGroupsData = fillEquipmentGroupsData(equipmentGroups);
@@ -359,6 +492,9 @@ app.get('/mac_protocol', async (req, res) => {
         const samplingParamsData = fillSamplingParamsData(samplingParams)
         const rpnFormulaData = fillRpnFormulaData(rpnFormulas);
         const cleaningLimitPolicyData = fillCleaningLimitData(cleaningLimitPolicies)
+        const equipmentWiseProductMacTable = fillEquipmentWiseProductMACTable(equipments, equipmentWiseMac);
+        const rpnCategoryData = fillRPNNumbers(rpnCategories) 
+
         let latexstr = `
         \\documentclass{article}
         \\usepackage[left=1.5cm, right=5cm, top=2cm]{geometry}
@@ -369,12 +505,13 @@ app.get('/mac_protocol', async (req, res) => {
         ${productsData}
         ${equipmentsData}
         ${equipmentGroupsData}
-        ${peMatrixData}
         ${variableData}
         ${macFormulaData}
-        ${samplingParamsData}
-        ${rpnFormulaData}
         ${cleaningLimitPolicyData}
+        ${rpnFormulaData}
+        ${peMatrixData}
+        ${equipmentWiseProductMacTable}
+        ${rpnCategoryData}
         \\end{document}
         `;
         await writeFile(latexstr, 'sample', 'tex')
