@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const pdfMake = require('pdfmake');
-const {reportObject} = require('./seed');
+const {reportObject, selectionCriteriaDescription} = require('./seed');
 const path = require('path');
 const fs = require('fs');
 const generateName = require('sillyname');
@@ -12,11 +12,12 @@ const pdfPath = path.join(__dirname, '/pdf');
 const app = express();
 const os = require('os')
 const latex = require('node-latex');
+const Mustache = require('mustache');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
-
-
+Mustache.tags = ['<<', '>>'];
+Mustache.escape = text => text;
 app.get('/ping', (req, res) => {
     res.send('pong');
 });
@@ -311,7 +312,7 @@ function calculateCategories(
     return updateValues;
   }
 
-function fillRPNNumbers(riskNumbers) {
+function fillRPNNumbers(riskNumbers, template) {
     
     const headers = [[
       "Name",
@@ -352,30 +353,33 @@ function fillRPNNumbers(riskNumbers) {
         leftAlign: true
     };
 
-    return tableComponent(data);
-
+    if(template) {
+        return table;
+    } else {
+      return tableComponent(data);
+    }
   }
 
-function fillSamplingParamsData(samplingParams) {
-    let str = `
-                \\newpage
-                \\section{Section F7: Sampling Paramters}         
-                The Sampling Parameters used in the protocol workflow is as:
-                \\begin{longtable}[l]{ |p{2cm} |p{1.5cm} |p{1cm} |p{1cm} |p{}}
-                \\hline\n
-                Name & Risk Id & Product Property & Unit & From & To & Risk Category Number\\\\\n
-                \\hline\n
-    `;
-    const keys = Object.keys(samplingParams.params)
-    keys.forEach((key) => {
-        str += `${key} & ${samplingParams.params[key]}\\\\\n`
-        str += `\\hline\n`
-    })
-    str += `
-    \\end{longtable}
-    `
-    return str;
-}
+// function fillSamplingParamsData(samplingParams) {
+//     let str = `
+//                 \\newpage
+//                 \\section{Section F7: Sampling Paramters}         
+//                 The Sampling Parameters used in the protocol workflow is as:
+//                 \\begin{longtable}[l]{ |p{2cm} |p{1.5cm} |p{1cm} |p{1cm} |p{}}
+//                 \\hline\n
+//                 Name & Risk Id & Product Property & Unit & From & To & Risk Category Number\\\\\n
+//                 \\hline\n
+//     `;
+//     const keys = Object.keys(samplingParams.params)
+//     keys.forEach((key) => {
+//         str += `${key} & ${samplingParams.params[key]}\\\\\n`
+//         str += `\\hline\n`
+//     })
+//     str += `
+//     \\end{longtable}
+//     `
+//     return str;
+// }
 
 function formTableHeaders(headers, columnWidths) {
     if(headers.length !== columnWidths.length) {
@@ -424,19 +428,17 @@ function tableComponent(data) {
 }
 
 const MACMetrics = {
-    // L1: "MAC Next Product",
-    // L2: "MAC Next Batch",
     L3: "MAC Surface Area",
     L4: "MAC Swab",
     L5: "MAC Swab Extract"
   };
 function fillEquipmentWiseProductMACTable(
     equipments,
-    eqWiseMAC
+    eqWiseMAC,
+    template
   ) {
     const headers = [["ID","Name",`Toxicity based ${MACMetrics["L5"]}`,`Dosage based ${MACMetrics["L5"]}` ,`General ${MACMetrics["L5"]} `, `Site Acceptance limit ${MACMetrics["L5"]}`]];
     
-    // const formatMAC = formatMACPPM('ppm');
     const body = equipments
       .filter(
         e =>
@@ -461,8 +463,247 @@ function fillEquipmentWiseProductMACTable(
           columnWidths,
           leftAlign: true
       };
-      return tableComponent(data);
+      if(template) {
+          return table;
+      } else {
+        return tableComponent(data);
+      }
   }
+
+function fillEquipmentGroupWiseMAC(equipmentGroups, equipmentGroupWiseMAC, template) {
+    const headers = [["ID",`Toxicity based ${MACMetrics["L5"]}`,`Dosage based ${MACMetrics["L5"]}` ,`General ${MACMetrics["L5"]} `, `Site Acceptance limit ${MACMetrics["L5"]}`]];
+
+    const body = equipmentGroups.map(eg => {
+        const macs = equipmentGroupWiseMAC[eg.id];
+        const macToxicity = +macs.worstMACToxicity.L5;
+        const macDosage = +macs.worstMACDosage.L5;
+        const macGeneral = +macs.worstMACGeneral.L5;
+        const alertLimit = +macs.alertLimit.L5;
+    
+        return [eg.groupId, macToxicity, macDosage, macGeneral, alertLimit];
+      });
+      
+      let table = [...headers, ...body];
+      let columnWidths = ["1.5cm", "2cm", "3cm", "3cm", "3cm", "3cm"]
+      let data = {
+          table,
+          columnWidths,
+          leftAlign: true
+      };
+      if(template) {
+          return table;
+      } else {
+        return tableComponent(data);
+      }
+
+}
+
+function fillEquipmentWiseCAMACTable(equipments, cleaningAgents, equipmentWiseMAC,template) {
+    const headers = [["Equipment ID",`Equipment Name`, ...cleaningAgents.map(c => c.name)]];
+
+    const eqWiseMACData = equipments
+    .filter(e => equipmentWiseMAC[e.id].cleaningAgentLimits)
+    .map(e => {
+      return {
+        equipmentId: e.equipment_id,
+        equipmentName: e.name,
+        cleaningAgents: cleaningAgents.map(c => {
+          let ca = equipmentWiseMAC[e.id].cleaningAgentLimits[c.id];
+          return ca && ca.mac.L5;
+        })
+      };
+    });
+
+    const body = eqWiseMACData.map(e => [
+        e.equipmentId,
+        e.equipmentName,
+        ...e.cleaningAgents.map(
+          x =>
+            typeof x !== "undefined"
+              ? x
+              : "N/A"
+        )
+      ]);
+      let table = [...headers, ...body];
+      let columnWidths = ["1.5cm", "2cm"]
+      let len = headers[0].length - 2;
+      for(let i = 0; i < len; i++) {
+        columnWidths.push("2cm");
+      }
+      let data = {
+          table,
+          columnWidths,
+          leftAlign: true
+      };
+      if(template) {
+          return table;
+      } else {
+        return tableComponent(data);
+      }
+}
+
+function createEquipmentWiseRPNTableData(
+    equipments,
+    eqWiseRPN
+  ) {
+    return equipments.map(e => ({
+      equipmentId: e.equipment_id,
+      equipmentName: e.name,
+      worstProductRPN: eqWiseRPN[e.id]
+    }));
+  }
+
+function getEquipmentWiseWorstRPNProductTable(
+    equipments,
+    eqWiseRPN,
+    products,
+    selectionCriteria,
+    template
+  ) {
+    const selectionCriteriaNames = selectionCriteria.reduce((old, cur) => {
+      if (old.indexOf(cur.name) === -1) {
+        old.push(cur.name);
+      }
+      return old;
+    }, []);
+    const rpnHeaders = selectionCriteriaNames.map(r => `Worst Product by ${r}`);
+    const headers = [
+      [
+        "Equipment ID",
+        "Equipment Name",
+        ...rpnHeaders
+      ]
+    ];
+    const columnWidths = ["3cm", "3cm"];
+    const len = headers.length - 2;
+    for(let i = 0; i < len; i++) {
+        columnWidths.push("3cm");
+    }
+    let pIdToNameMap = {};
+    let keys = Object.keys(eqWiseRPN);
+    keys.forEach(item => {
+      selectionCriteriaNames.forEach(name => {
+        eqWiseRPN[item][name].forEach(prod => {
+          let found = products.find(product => {
+            return product.product_id === prod;
+          });
+          pIdToNameMap[prod] = found.name;
+        });
+      });
+    });
+    const eqWiseMACData = createEquipmentWiseRPNTableData(equipments, eqWiseRPN);
+    eqWiseMACData.forEach(eq => {
+      let rpnValues = selectionCriteriaNames.map(r => {
+        let wProducts = eq.worstProductRPN[r];
+        let productNames = getProductNamesFromId(wProducts, pIdToNameMap);
+        return productNames;
+      });
+      const row = [eq.equipmentId, eq.equipmentName, ...rpnValues];
+      headers.push(row);
+    });
+    let data = {
+        table:headers,
+        columnWidths,
+        leftAlign: true
+    };
+    if(template) {
+        return headers;
+    } else {
+        return tableComponent(data);
+    }
+  }
+  
+  function getProductNamesFromId(
+    productIds,
+    pIdToNameMap
+  ) {
+    const names = productIds.reduce((a, id) => [...a, pIdToNameMap[id]], []);
+    return names.join(", ");
+  }
+
+
+function getHeaders(widths) {
+    const headers = widths.reduce((a,b) => {
+        a += `p{${b}} |`
+        return a;
+    }, "|");
+    return headers;
+}   
+
+function getData(table) {
+    const data = table.reduce((a,b) => {
+        a += '\\hline\n'
+        a += b.join("&")
+        a += '\\\\\n'
+        a += '\\hline\n'
+        return a;
+    }, "");
+    return data;
+}
+
+// function escapeString(str) {
+//     let finalStr="";
+//     for(let i = 0; i < str.length; i++) {
+//         if(str[i] === "\\") {
+//             finalStr += "\\\\"
+//         } else {
+//             finalStr += str[i];
+//         }
+//     }
+//     return finalStr;
+// }
+
+function fillSelectionCriterias(selectionCriteria) {
+    let str = "";
+    selectionCriteria.forEach((selCriteria) => {
+        str += "\\begin{itemize}"
+        str += `\\item ${selCriteria.name} \\dots{}`
+        str += `\\begin{itemize}`
+        selCriteria.descriptions.forEach((des) => {
+            str += `\\item ${des}`;
+        });
+        str += `\\end{itemize}`
+        str += `\\end{itemize}`
+    });
+    return str;
+}
+
+app.get('/mac_protocol_template', async (req, res) => {
+    const equipments = reportObject.evaluation.snapshot.equipments;
+    const equipmentGroups = reportObject.evaluation.snapshot.equipmentGroups;
+    const cleaningAgents = reportObject.evaluation.snapshot.cleaningAgents;
+    const eqWiseRPN = reportObject.content.macCalculation.equipmentWiseWorstProduct;
+    const selectionCriteria = reportObject.evaluation.snapshot.selectionCriteria;
+    const products = reportObject. evaluation.snapshot.products;
+
+    const equipmentWiseMac = reportObject.content.macCalculation.macLimits.equipmentWiseMac;
+    const equipmentGroupWiseMac = reportObject.content.macCalculation.macLimits.equipmentGroupWiseMac;
+    const eqWiseMacTable = fillEquipmentWiseProductMACTable(equipments, equipmentWiseMac, true);
+    const eqGroupWiseMacTable = fillEquipmentGroupWiseMAC(equipmentGroups, equipmentGroupWiseMac, true);
+    const eqWiseCAMacTable = fillEquipmentWiseCAMACTable(equipments, cleaningAgents, equipmentWiseMac, true);
+    const eqWiseRPNTable = getEquipmentWiseWorstRPNProductTable(equipments, eqWiseRPN, products, selectionCriteria, true);
+
+    const template_data = {
+        eqWiseMacHeaders: getHeaders(["1.5cm", "2cm", "3cm", "3cm", "3cm", "3cm"]),
+        eqGroupWiseMacHeaders: getHeaders(["1.5cm", "3cm", "3cm", "3cm", "3cm"]),
+        eqWiseCAMacHeaders: getHeaders(["2cm", "2cm", ...cleaningAgents.map(c => "4cm")]),
+        eqWiseRPNHeaders: getHeaders(["3cm","3cm", ...selectionCriteria.map(sc => "3cm")]),
+        eqWiseMacData: getData(eqWiseMacTable),
+        eqGroupWiseMacData: getData(eqGroupWiseMacTable),
+        eqWiseCAMacData: getData(eqWiseCAMacTable),
+        eqWiseRPNData: getData(eqWiseRPNTable),
+        selectionCriteriaList: fillSelectionCriterias(selectionCriteriaDescription),
+        some: {thing: "siddharth"}
+    }
+    let template = fs.readFileSync('template.tex', "utf8");
+    const input = Mustache.render(template, template_data);
+    const output = fs.createWriteStream(path.join(pdfPath, `template.pdf`));
+    const pdf = latex(input);
+        pdf.pipe(output).on("finish", () => {
+            console.log('Done: <<<<', os.freemem());
+        })
+        pdf.on("error", err => console.err)
+});
 
 app.get('/mac_protocol', async (req, res) => {
     try {
@@ -483,13 +724,12 @@ app.get('/mac_protocol', async (req, res) => {
         const equipmentGroupWiseMac = reportObject.content.macCalculation.macLimits.equipmentGroupWiseMac;
 
 
-        const productsData = fillProductsData(products);
+        const productsData = fillProductsData(products, template_data);
         const equipmentsData = fillEquipmentsData(equipments);
         const equipmentGroupsData = fillEquipmentGroupsData(equipmentGroups);
         const peMatrixData = fillPEMatrixData(products, equipments)
         const variableData = fillVariablesData(variables);
         const macFormulaData = fillFormulaData(MACformulas)
-        const samplingParamsData = fillSamplingParamsData(samplingParams)
         const rpnFormulaData = fillRpnFormulaData(rpnFormulas);
         const cleaningLimitPolicyData = fillCleaningLimitData(cleaningLimitPolicies)
         const equipmentWiseProductMacTable = fillEquipmentWiseProductMACTable(equipments, equipmentWiseMac);

@@ -1,0 +1,72 @@
+\documentclass{article}
+        \usepackage[left=1.5cm, right=5cm, top=2cm]{geometry}
+        \usepackage[utf8]{inputenc}
+        \usepackage{longtable,pdflscape,graphicx}
+        \usepackage{amsmath}
+        \usepackage{textcomp}
+        \renewcommand{\labelitemii}{$\star$}
+        \let\Item\item
+\newcommand\SpecialItem{\renewcommand\item[1][]{\Item[\textbullet~\bfseries##1]}}
+\renewcommand\enddescription{\endlist\global\let\item\Item}
+        \begin{document}
+        \pagenumbering{gobble}
+        \newpage
+        \section{Section B: Equipmentwise MAC and Worst Products}
+        Equipment wise worst case residue limits (MAC Surface Area) are given below:
+        \begin{longtable}[l]{<<eqWiseMacHeaders>>}
+        <<eqWiseMacData>>
+        \end{longtable}
+        Equipment wise worst case products based on the RPN(Risk Priority Numbers) are given in the table below:
+        \begin{longtable}[l]{<<eqWiseRPNHeaders>>}
+        <<eqWiseRPNData>>
+        \end{longtable}
+        Equipment wise worst case residue limits (MAC Surface Area) for each of the cleaning agents are given in the table below:
+        \begin{longtable}[l]{<<eqWiseCAMacHeaders>>}
+        <<eqWiseCAMacData>>
+        \end{longtable}
+        \newpage
+        \section{Section C: Equipment Group Wise MAC}
+        For the selected group, worst case limit is given below
+        \begin{longtable}[l]{<<eqGroupWiseMacHeaders>>}
+        <<eqGroupWiseMacData>>
+        \end{longtable}
+        \newpage
+        \section{Section G: Worst Product Selection Criteria}
+        <<selectionCriteriaList>>
+        \newpage
+        \section{Section E: Calculation Methodology}
+        The calculation Methodology is given as below:\\\\
+        The MAC(Maximum Allowed Carryover) limit calculations performed in this document are based on the principles outlined in the below reference documents:\\
+        \begin{itemize}
+        \item Fourman and Mullen, Determing Cleaning Validation Acceptance Limits for Pharmacautical Manufacturing Operations \dots{}
+        \item PDA Technical Report No. 29, Revised 2012 Points to Consider for Cleaning Validation TR29
+        \end{itemize}
+        Definition of MAC (Maximum Allowed Carryover) or Acceptable Residue Limit in the next product:\\\\
+        The acceptance level (i.e. concentration) of the target residue in the subsequently manufactured product may be called by different terms, but for this document that concentration will be called Maximum Allowed Carryover (abbreviated MAC).\\\\
+        This is an expression of the maximum concentration of residue allowed in that next product, as determined by medical, pharmacological, safety, stability and
+        or performance issues. For chemical residues (such as the drug active or cleaning agent), this concentration is typically given
+        as {\textmu}g/g or {\textmu}g/mL (or an equivalent expression depending on the units selected).\\\\
+        MAC is generally expressed in various forms. The terminology used in this document is given below.\\\\
+        MAC Surface Area = Maximum allowed residue limit in the next product batch per shared surface area across the product equipment contact surface area. This is generally expressed in mg per square inch\\\\
+        MAC Swab = residue concentration in the swab.\\\\
+        MAC Swab = (MAC Surface Area) * (Swabbed surface Area)\\\\
+        MAC Swab Extract = residue concentration in the swab.\\\\
+        MAC Swab Extract = (MAC Surface Area) * (Swabbed surface Area) / (Solvent Desorption Amount)\\\\
+        \newpage
+        \SpecialItem
+        \begin{description}
+            \item[Text] more text
+            \item[and some] more text
+            \item[] empty <<some.thing>>
+        \end{description}
+        \newpage
+        \begin{itemize} 
+        \item one \dots{}
+            \begin{itemize} 
+                \item Language Models
+                \item Vector Space Models
+            \end{itemize}
+        \item two \dots{}
+        \item three \dots{}
+        \end{itemize}
+        \end{document}
