@@ -9,14 +9,33 @@ const wkhtmltopdf = require('wkhtmltopdf');
 const pdfPath = path.join(__dirname, '/pdf');
 // const PdfPrinter = require("pdfmake/src/printer")
 // const printer = new PdfPrinter(fonts)
+const doT = require('dot');
 const app = express();
 const os = require('os')
 const latex = require('node-latex');
 const Mustache = require('mustache');
+const _ = require('underscore');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
 Mustache.tags = ['<<', '>>'];
+_.templateSettings = {
+    interpolate: /\<\<(.+?)\>\>/g,
+    evaluate: /\<\<.(.+?)\>\>/g
+};
+
+doT.templateSettings = {
+    evaluate: /\<\<([\s\S]+?)\>\>/g,
+    interpolate: /\<\<=([\s\S]+?)\>\>/g,
+    iterate:     /\<\<!\s*(?:\>\>|([\s\S]+?)\s*\:\s*([\w$]+)\s*(?:\:\s*([\w$]+))?\s*\>\>)/g,
+    conditional: /\<\<\?(\?)?\s*([\s\S]*?)\s*\>\>/g,
+    define:      /\<\<!!\s*([\w\.$]+)\s*(\:|=)([\s\S]+?)!\>\>/g,
+    append: false,
+    strip: false,
+    selfcontained: true,
+    varname: 'it'
+}
+
 Mustache.escape = text => text;
 app.get('/ping', (req, res) => {
     res.send('pong');
@@ -46,13 +65,15 @@ function genPdf(docDefinition) {
     });  
 }
 
-function startTimer(name) {
-    console.time(name);
-    console.log(name, " started");
-    return () => {
-        console.timeEnd(name);
-    }
-}
+// function startTimer(name) {
+//     console.time(name);
+//     console.log(`${name}: <<<`, process.memoryUsage());
+//     console.log(name, " started");
+//     return () => {
+//         console.log(`${name}: <<<`, process.memoryUsage());
+//         console.timeEnd(name);
+//     }
+// }
 
 async function writeFile(latexstr, sillyName, ext) {
     return new Promise((res, rej) => {
@@ -224,10 +245,12 @@ function fillEquipmentsData(equipments) {
     return tableComponent(data);
 }
 
-function fillProductsData(products) {
+function fillProductsData(products, template) {
     let headers = [["Name", "Product Id", "API", "Solubility Factor", "Cleanability Factor", "PDE", "Min TD", "Max TD", "Min BS", "Strength"]];
     let body = products.reduce((a,product) => {
-        a.push([`${product.name}`, `${product.product_id}`, `${product.api_name}`, `${product.solubility_factor.value}`, `${Math.round(+product.cleanability_factor.value)}`, `${Math.round(+product.pde.value)}`, `${product.min_td.value}`, `${product.max_td.value}`, `${Math.round(+product.min_bs.value)}`, `${Math.round(+product.strength.value)}`])
+        for(let i = 0; i < 25550; i++) {
+            a.push([`${product.name}`, `${product.product_id}`, `${product.api_name}`, `${product.solubility_factor.value}`, `${Math.round(+product.cleanability_factor.value)}`, `${Math.round(+product.pde.value)}`, `${product.min_td.value}`, `${product.max_td.value}`, `${Math.round(+product.min_bs.value)}`, `${Math.round(+product.strength.value)}`])
+        }
         return a;
     }, []);
     let table = [...headers, ...body];
@@ -237,7 +260,11 @@ function fillProductsData(products) {
         columnWidths,
         leftAlign: true
     };
-    return tableComponent(data);
+    if(template) {
+        return table;
+    } else {
+        return tableComponent(data);
+    }
 }
 
 function fillRpnFormulaData(rpnFormulas) {
@@ -360,27 +387,6 @@ function fillRPNNumbers(riskNumbers, template) {
     }
   }
 
-// function fillSamplingParamsData(samplingParams) {
-//     let str = `
-//                 \\newpage
-//                 \\section{Section F7: Sampling Paramters}         
-//                 The Sampling Parameters used in the protocol workflow is as:
-//                 \\begin{longtable}[l]{ |p{2cm} |p{1.5cm} |p{1cm} |p{1cm} |p{}}
-//                 \\hline\n
-//                 Name & Risk Id & Product Property & Unit & From & To & Risk Category Number\\\\\n
-//                 \\hline\n
-//     `;
-//     const keys = Object.keys(samplingParams.params)
-//     keys.forEach((key) => {
-//         str += `${key} & ${samplingParams.params[key]}\\\\\n`
-//         str += `\\hline\n`
-//     })
-//     str += `
-//     \\end{longtable}
-//     `
-//     return str;
-// }
-
 function formTableHeaders(headers, columnWidths) {
     if(headers.length !== columnWidths.length) {
         throw new Error('Headers length and columnWidths length do not match')
@@ -449,10 +455,10 @@ function fillEquipmentWiseProductMACTable(
         return [
           e.equipment_id,
           e.name,
-          macs.macToxicity.L5,
-          macs.macDosage.L5,
-          macs.macGeneral.L5,
-          macs.alertLimit.L5
+          macs.macToxicity.L5.toFixed(4),
+          macs.macDosage.L5.toFixed(4),
+          macs.macGeneral.L5.toFixed(4),
+          macs.alertLimit.L5.toFixed(4)
         ];
       });
       
@@ -472,19 +478,30 @@ function fillEquipmentWiseProductMACTable(
 
 function fillEquipmentGroupWiseMAC(equipmentGroups, equipmentGroupWiseMAC, template) {
     const headers = [["ID",`Toxicity based ${MACMetrics["L5"]}`,`Dosage based ${MACMetrics["L5"]}` ,`General ${MACMetrics["L5"]} `, `Site Acceptance limit ${MACMetrics["L5"]}`]];
-
-    const body = equipmentGroups.map(eg => {
-        const macs = equipmentGroupWiseMAC[eg.id];
-        const macToxicity = +macs.worstMACToxicity.L5;
-        const macDosage = +macs.worstMACDosage.L5;
-        const macGeneral = +macs.worstMACGeneral.L5;
-        const alertLimit = +macs.alertLimit.L5;
+    let body = [];
+    for(let i = 0; i < 4000; i++) {
+        equipmentGroups.forEach(eg => {
+            const macs = equipmentGroupWiseMAC[eg.id];
+            const macToxicity = +macs.worstMACToxicity.L5.toFixed(4);
+            const macDosage = +macs.worstMACDosage.L5.toFixed(4);
+            const macGeneral = +macs.worstMACGeneral.L5.toFixed(4);
+            const alertLimit = +macs.alertLimit.L5.toFixed(4);
+        
+            return body.push([eg.groupId, macToxicity, macDosage, macGeneral, alertLimit]);
+          });
+    }
+    // const body = equipmentGroups.map(eg => {
+    //     const macs = equipmentGroupWiseMAC[eg.id];
+    //     const macToxicity = +macs.worstMACToxicity.L5;
+    //     const macDosage = +macs.worstMACDosage.L5;
+    //     const macGeneral = +macs.worstMACGeneral.L5;
+    //     const alertLimit = +macs.alertLimit.L5;
     
-        return [eg.groupId, macToxicity, macDosage, macGeneral, alertLimit];
-      });
+    //     return [eg.groupId, macToxicity, macDosage, macGeneral, alertLimit];
+    //   });
       
       let table = [...headers, ...body];
-      let columnWidths = ["1.5cm", "2cm", "3cm", "3cm", "3cm", "3cm"]
+      let columnWidths = ["1.5cm", "3cm", "3cm", "3cm", "3cm"]
       let data = {
           table,
           columnWidths,
@@ -500,7 +517,7 @@ function fillEquipmentGroupWiseMAC(equipmentGroups, equipmentGroupWiseMAC, templ
 
 function fillEquipmentWiseCAMACTable(equipments, cleaningAgents, equipmentWiseMAC,template) {
     const headers = [["Equipment ID",`Equipment Name`, ...cleaningAgents.map(c => c.name)]];
-
+    console.log('Equipments: <<<<', equipments);
     const eqWiseMACData = equipments
     .filter(e => equipmentWiseMAC[e.id].cleaningAgentLimits)
     .map(e => {
@@ -575,7 +592,7 @@ function getEquipmentWiseWorstRPNProductTable(
       ]
     ];
     const columnWidths = ["3cm", "3cm"];
-    const len = headers.length - 2;
+    const len = headers[0].length - 2;
     for(let i = 0; i < len; i++) {
         columnWidths.push("3cm");
     }
@@ -674,7 +691,7 @@ app.get('/mac_protocol_template', async (req, res) => {
     const cleaningAgents = reportObject.evaluation.snapshot.cleaningAgents;
     const eqWiseRPN = reportObject.content.macCalculation.equipmentWiseWorstProduct;
     const selectionCriteria = reportObject.evaluation.snapshot.selectionCriteria;
-    const products = reportObject. evaluation.snapshot.products;
+    const products = reportObject.evaluation.snapshot.products;
 
     const equipmentWiseMac = reportObject.content.macCalculation.macLimits.equipmentWiseMac;
     const equipmentGroupWiseMac = reportObject.content.macCalculation.macLimits.equipmentGroupWiseMac;
@@ -682,6 +699,7 @@ app.get('/mac_protocol_template', async (req, res) => {
     const eqGroupWiseMacTable = fillEquipmentGroupWiseMAC(equipmentGroups, equipmentGroupWiseMac, true);
     const eqWiseCAMacTable = fillEquipmentWiseCAMACTable(equipments, cleaningAgents, equipmentWiseMac, true);
     const eqWiseRPNTable = getEquipmentWiseWorstRPNProductTable(equipments, eqWiseRPN, products, selectionCriteria, true);
+    const productsTable = fillProductsData(products, true);
 
     const template_data = {
         eqWiseMacHeaders: getHeaders(["1.5cm", "2cm", "3cm", "3cm", "3cm", "3cm"]),
@@ -693,11 +711,169 @@ app.get('/mac_protocol_template', async (req, res) => {
         eqWiseCAMacData: getData(eqWiseCAMacTable),
         eqWiseRPNData: getData(eqWiseRPNTable),
         selectionCriteriaList: fillSelectionCriterias(selectionCriteriaDescription),
+        products: getData(productsTable),
+        productHeaders: getHeaders(["1.5cm", "2cm", "1.5cm", "1.5cm", "2cm", "2cm", "2cm", "2cm", "2cm", "2cm"]),
         some: {thing: "siddharth"}
-    }
-    let template = fs.readFileSync('template.tex', "utf8");
+    };
+    console.log('Using template');
+    const temp = startTimer("mustache");
+    let template = fs.readFileSync('template_underscore.tex', "utf8");
     const input = Mustache.render(template, template_data);
     const output = fs.createWriteStream(path.join(pdfPath, `template.pdf`));
+    const pdf = latex(input);
+        pdf.pipe(output).on("finish", () => {
+            console.log('Done: <<<<', os.freemem());
+            temp();
+        })
+        pdf.on("error", err => console.err)
+});
+
+function escapeProperly(str) {
+    let finalstr=""
+    for(let i = 0; i < str.length; i++) {
+        if((str[i] === " " && str[i+1] === "\\")) {
+            finalstr += '\n'
+        } else {
+            finalstr += str[i]
+        }
+    }
+    return finalstr;
+}
+
+app.get('/mac_protocol_dot', async (req, res) => {
+    const equipments = reportObject.evaluation.snapshot.equipments;
+    const equipmentGroups = reportObject.evaluation.snapshot.equipmentGroups;
+    const cleaningAgents = reportObject.evaluation.snapshot.cleaningAgents;
+    const eqWiseRPN = reportObject.content.macCalculation.equipmentWiseWorstProduct;
+    const selectionCriteria = reportObject.evaluation.snapshot.selectionCriteria;
+    const products = reportObject. evaluation.snapshot.products;
+
+    const equipmentWiseMac = reportObject.content.macCalculation.macLimits.equipmentWiseMac;
+    const equipmentGroupWiseMac = reportObject.content.macCalculation.macLimits.equipmentGroupWiseMac;
+    const eqWiseMacTable = fillEquipmentWiseProductMACTable(equipments, equipmentWiseMac, true);
+    const eqGroupWiseMacTable = fillEquipmentGroupWiseMAC(equipmentGroups, equipmentGroupWiseMac, true);
+    const eqWiseCAMacTable = fillEquipmentWiseCAMACTable(equipments, cleaningAgents, equipmentWiseMac, true);
+    const productsTable = fillProductsData(products, true);
+    const eqWiseRPNTable = getEquipmentWiseWorstRPNProductTable(equipments, eqWiseRPN, products, selectionCriteria, true);
+    // const eqWiseMacPage = [
+    //     {type: "text", data: "Equipment wise worst case residue limits (MAC Surface Area) are given below: "},
+    //     {type: "table", data: eqWiseMacTable, columnWidths: getHeaders(["1.5cm", "2cm", "3cm", "3cm", "3cm", "3cm"])},
+    //     {type: "text", data: "Equipment wise worst case products based on the RPN (Risk Priority Numbers) are given in the table below: "},
+    //     {type: "table", data: eqWiseRPNTable, columnWidths: getHeaders(["3cm","3cm", ...selectionCriteria.map(sc => "3cm")])},
+    //     {type: "text", data: "Equipment wise worst case residue limits(MAC Surface Area) for each of the cleaning agents are given in the table below:"},
+    //     {type: "table", data: eqWiseCAMacTable, columnWidths: getHeaders(["2cm", "2cm", ...cleaningAgents.map(c => "4cm")])}
+    // ];
+    // const eqGroupWisePage = [
+    //     {type: "text", data: "For the selected Group worst case limit is given below"},
+    //     {type: "table", data: eqGroupWiseMacTable, columnWidths: getHeaders(["1.5cm", "3cm", "3cm", "3cm", "3cm"])}
+    // ];
+    // const page = [{data: "The product attributes are given in the table below", type: "text"}, {data: products, type: "table"}];
+
+    console.log('Selection Criteria Description: <<<<<<<<', JSON.stringify(selectionCriteriaDescription, null, 3));
+    console.log('Products: <<<<<<<', JSON.stringify(products, null, 3));
+
+    const template_data = {
+        eqWiseMacHeaders: getHeaders(["1.5cm", "2cm", "3cm", "3cm", "3cm", "3cm"]),
+        eqGroupWiseMacHeaders: getHeaders(["1.5cm", "3cm", "3cm", "3cm", "3cm"]),
+        eqWiseCAMacHeaders: getHeaders(["2cm", "2cm", ...cleaningAgents.map(c => "4cm")]),
+        eqWiseRPNHeaders: getHeaders(["3cm","3cm", ...selectionCriteria.map(sc => "3.5cm")]),
+        eqWiseMacData: eqWiseMacTable,
+        eqGroupWiseMacData: eqGroupWiseMacTable,
+        eqWiseCAMacData: eqWiseCAMacTable,
+        eqWiseRPNData: eqWiseRPNTable,
+        selectionCriteriaList: selectionCriteriaDescription,
+        products:productsTable,
+        equipments,
+        equipmentGroups,
+        MACMetrics
+        // table: true,
+        // page,
+        // types: {
+        //     text: "text",
+        //     table: "table"
+        // },
+        // equipmentPage:eqWiseMacPage,
+        // pages: [{page: eqWiseMacPage, header: 'Section B: Equipment Wise Mac and Worst Products'}, {page: eqGroupWisePage, header: 'Section C: Equipment Group Wise MAC'}],
+        // some: {thing: "siddharth"}
+    };
+    const stop = startTimer("Mac_Protocol_Dot");
+    const stopTemp = startTimer("template");
+    let templateLatex = fs.readFileSync('template_4.tex', "utf8");
+    const tempFn = doT.template(templateLatex);
+    let input = tempFn(template_data);
+    stopTemp();
+    // console.log('Input: <<<<<<<<<<<<<<<', input);
+    // input = escapeProperly(input)
+    // await writeFile(input, "template_dot_4", "tex")
+    // const input2 = fs.createReadStream('./template_dot_4.tex');
+    const output = fs.createWriteStream(path.join(pdfPath, `template_dot_4.pdf`));
+    const convertInputToLatex = startTimer("converting_input_latex");
+    const pdf = latex(input);
+    convertInputToLatex();
+    // const Readable = require('stream').Readable;
+    // const s = new Readable();
+    // s._read = () => {}; // redundant? see update below
+    // s.push('your text here');
+    // s.push(null);
+    pdf.pipe(output).on("finish", () => {
+            console.log('Done: <<<<', os.freemem());
+            stop();
+    });
+    pdf.on("error", err => console.err);
+}); 
+
+function startTimer(name) {
+    console.time(name);
+    console.log(`${name}: <<<`, process.memoryUsage());
+    let stopTimer = function() {
+        console.log(`${name}: <<<`, process.memoryUsage());
+        console.timeEnd(name);
+    }
+    return stopTimer;
+}
+app.get("/mac_protocol_underscore", async (req, res) => {
+    
+    const equipments = reportObject.evaluation.snapshot.equipments;
+    const equipmentGroups = reportObject.evaluation.snapshot.equipmentGroups;
+    const cleaningAgents = reportObject.evaluation.snapshot.cleaningAgents;
+    const eqWiseRPN = reportObject.content.macCalculation.equipmentWiseWorstProduct;
+    const selectionCriteria = reportObject.evaluation.snapshot.selectionCriteria;
+    const products = reportObject. evaluation.snapshot.products;
+
+    const equipmentWiseMac = reportObject.content.macCalculation.macLimits.equipmentWiseMac;
+    const equipmentGroupWiseMac = reportObject.content.macCalculation.macLimits.equipmentGroupWiseMac;
+    const eqWiseMacTable = fillEquipmentWiseProductMACTable(equipments, equipmentWiseMac, true);
+    const eqGroupWiseMacTable = fillEquipmentGroupWiseMAC(equipmentGroups, equipmentGroupWiseMac, true);
+    const eqWiseCAMacTable = fillEquipmentWiseCAMACTable(equipments, cleaningAgents, equipmentWiseMac, true);
+    const eqWiseRPNTable = getEquipmentWiseWorstRPNProductTable(equipments, eqWiseRPN, products, selectionCriteria, true);
+    const productsPage = {
+        page: [{data: "table text", type: "text"}, {data: products, type: "table"}]
+    }
+
+    const template_data = {
+        eqWiseMacHeaders: getHeaders(["1.5cm", "2cm", "3cm", "3cm", "3cm", "3cm"]),
+        eqGroupWiseMacHeaders: getHeaders(["1.5cm", "3cm", "3cm", "3cm", "3cm"]),
+        eqWiseCAMacHeaders: getHeaders(["2cm", "2cm", ...cleaningAgents.map(c => "4cm")]),
+        eqWiseRPNHeaders: getHeaders(["3cm","3cm", ...selectionCriteria.map(sc => "3cm")]),
+        eqWiseMacData: getData(eqWiseMacTable),
+        eqGroupWiseMacData: getData(eqGroupWiseMacTable),
+        eqWiseCAMacData: getData(eqWiseCAMacTable),
+        eqWiseRPNData: getData(eqWiseRPNTable),
+        selectionCriteriaList: fillSelectionCriterias(selectionCriteriaDescription),
+        products,
+        productsPage,
+        types: {
+            text: 'text',
+            table: 'table'
+        },
+        page: [{data: "table text", type: "text"}, {data: products, type: "table"}],
+        some: {thing: "siddharth"}
+    }
+    let templateLatex = fs.readFileSync('template_2.tex', "utf8");
+    const template = _.template(templateLatex);
+    const input = template(template_data);
+    console.log('Input: <<<<<', input);
+    const output = fs.createWriteStream(path.join(pdfPath, `template_underscore.pdf`));
     const pdf = latex(input);
         pdf.pipe(output).on("finish", () => {
             console.log('Done: <<<<', os.freemem());
@@ -710,21 +886,26 @@ app.get('/mac_protocol', async (req, res) => {
         // reportObject = await readFile('reportObject.json');
         const samplingParams = reportObject.content.macCalculation.samplingParams
         const products = reportObject.evaluation.snapshot.products;
-        const cleaningAgents = reportObject.cleaningAgents;
+        const cleaningAgents = reportObject.evaluation.snapshot.cleaningAgents;
         const equipments = reportObject.evaluation.snapshot.equipments;
         const equipmentGroups = reportObject.evaluation.snapshot.equipmentGroups;
         const variables = reportObject.evaluation.snapshot.variables;
         const MACformulas = reportObject.evaluation.snapshot.macFormulas;
         const rpnCategories = reportObject.evaluation.snapshot.rpnCategories;
         const rpnFormulas = reportObject.evaluation.snapshot.rpnFormulas;
-        const selectionCriteria = reportObject.selectionCriteria;
+        const selectionCriteria = reportObject.evaluation.snapshot.selectionCriteria;
         const defaultUnits = reportObject.defaultUnits;
         const cleaningLimitPolicies = reportObject.evaluation.snapshot.cleaningLimitPolicies;
         const equipmentWiseMac = reportObject.content.macCalculation.macLimits.equipmentWiseMac;
         const equipmentGroupWiseMac = reportObject.content.macCalculation.macLimits.equipmentGroupWiseMac;
+        const eqWiseRPN = reportObject.content.macCalculation.equipmentWiseWorstProduct;
 
+        const eqWiseMacTable = fillEquipmentWiseProductMACTable(equipments, equipmentWiseMac);
+        const eqGroupWiseMacTable = fillEquipmentGroupWiseMAC(equipmentGroups, equipmentGroupWiseMac);
+        const eqWiseCAMacTable = fillEquipmentWiseCAMACTable(equipments, cleaningAgents, equipmentWiseMac);
+        const eqWiseRPNTable = getEquipmentWiseWorstRPNProductTable(equipments, eqWiseRPN, products, selectionCriteria);
 
-        const productsData = fillProductsData(products, template_data);
+        const productsData = fillProductsData(products);
         const equipmentsData = fillEquipmentsData(equipments);
         const equipmentGroupsData = fillEquipmentGroupsData(equipmentGroups);
         const peMatrixData = fillPEMatrixData(products, equipments)
@@ -734,8 +915,8 @@ app.get('/mac_protocol', async (req, res) => {
         const cleaningLimitPolicyData = fillCleaningLimitData(cleaningLimitPolicies)
         const equipmentWiseProductMacTable = fillEquipmentWiseProductMACTable(equipments, equipmentWiseMac);
         const rpnCategoryData = fillRPNNumbers(rpnCategories) 
-
-        let latexstr = `
+        console.time("Mac_protocol")
+        let input = `
         \\documentclass{article}
         \\usepackage[left=1.5cm, right=5cm, top=2cm]{geometry}
         \\usepackage[utf8]{inputenc}
@@ -752,14 +933,23 @@ app.get('/mac_protocol', async (req, res) => {
         ${peMatrixData}
         ${equipmentWiseProductMacTable}
         ${rpnCategoryData}
+        ${eqWiseMacTable}
+        ${eqGroupWiseMacTable}
+        ${eqWiseCAMacTable}
+        ${eqWiseRPNTable}
         \\end{document}
         `;
-        await writeFile(latexstr, 'sample', 'tex')
-        const input = fs.createReadStream(`sample.tex`)
+        // await writeFile(latexstr, 'sample', 'tex')
+        // const input = fs.createReadStream(`sample.tex`)
         const output = fs.createWriteStream(path.join(pdfPath, `sample.pdf`))
+        const convertToLatex = startTimer("convert_latex_stream");
         const pdf = latex(input);
+        convertToLatex();
+        const streamOutput = startTimer("stream_to_pdf");
         pdf.pipe(output).on("finish", () => {
             console.log('Done: <<<<', os.freemem());
+            streamOutput();
+            console.timeEnd("Mac_protocol")
         })
         pdf.on("error", err => console.err)
     } catch (e) {

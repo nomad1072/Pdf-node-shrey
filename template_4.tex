@@ -1,0 +1,126 @@
+\documentclass{article}
+        \usepackage[left=1.5cm, right=5cm, top=2cm]{geometry}
+        \usepackage[utf8]{inputenc}
+        \usepackage{longtable,pdflscape,graphicx}
+        \usepackage{amsmath}
+        \usepackage{textcomp}
+        \usepackage{ltablex}
+        \usepackage{array,caption,tabularx,ragged2e,booktabs}
+        \usepackage[table]{xcolor}
+        \definecolor{lightyellow}{rgb}{255,228,196}
+        \renewcommand{\labelitemii}{$\star$}
+        \let\Item\item
+\newcommand\SpecialItem{\renewcommand\item[1][]{\Item[\textbullet~\bfseries##1]}}
+\renewcommand\enddescription{\endlist\global\let\item\Item}
+        \begin{document}
+        \showboxdepth=5
+        \showboxbreadth=5
+        \rowcolors{2}{gray!25}{white}
+        \pagenumbering{gobble}
+        \newpage
+        \section{Section A: Key Terms and Descriptions}
+        \begin{longtable}[l]{|p{3cm}|p{9cm}|p{1.5cm}|}\hline
+        Term & Description & Unit\\\hline
+        <<= it.MACMetrics.L3 >> & Maximum allowed residue limit in the next product batch per shared area across the product equipment contact surface & ppm\\\hline
+        <<= it.MACMetrics.L4 >> & Maximum allowed residue limit in the next product batch per swab sample. & ppm\\\hline
+        <<= it.MACMetrics.L5 >> & Maximum allowed residue concentration limit in the solvent that the swab sample is extracted into. & ppm \\\hline
+        \end{longtable}
+        \newpage
+        <<? it.eqWiseMacData >>
+        \section{Section B: Equipmentwise MAC and Worst Products}
+        Equipment wise worst case residue limits (MAC Surface Area) are given below:
+        \noindent\setlength\tabcolsep{4pt}%
+            \begin{tabularx}{\linewidth}{lc*{4}{>{\RaggedRight\arraybackslash}X}}
+                \rowcolor{gray!50}
+                <<! it.eqWiseMacData :value:index>>
+                    <<?  index === 0 >>
+                        \toprule
+                        <<= value.join("&") >>\\
+                    <<?>>       
+                    <<? index !== 0 >>
+                    \midrule
+                        <<= value.join("&")>>\\
+                    \addlinespace
+                    <<?>>
+                <<!>>
+                \bottomrule
+            \end{tabularx}
+            \captionof{table}{Equipment Group Wise Mac}
+        <<?>>
+        <<? it.eqWiseRPNData>>
+        Equipment wise worst case products based on the RPN(Risk Priority Numbers) are given in the table below:
+        \begin{longtable}[l]{<<= it.eqWiseRPNHeaders>>} \hline
+        <<! it.eqWiseRPNData :value:index>>
+            <<= value.join("&")>>\\\hline
+        <<!>>
+        \end{longtable}
+        <<?>>
+        <<? it.eqWiseCAMacData >>
+        Equipment wise worst case residue limits (MAC Surface Area) for each of the cleaning agents are given in the table below:
+        \begin{longtable}[l]{<<= it.eqWiseCAMacHeaders>>} \hline
+        <<! it.eqWiseCAMacData :value:index>>
+        <<= value.join("&")>>\\\hline
+        <<!>>
+        \end{longtable}
+        <<?>>
+        \newpage
+        \section{Section C: Equipment Group Wise MAC}
+        <<? it.eqGroupWiseMacData >>
+        For the selected group, worst case limit is given below
+        \begin{longtable}[l]{<<= it.eqGroupWiseMacHeaders>>} \hline
+        <<! it.eqGroupWiseMacData :value:index>>
+            <<= value.join("&") >>\\\hline
+        <<!>>
+        \end{longtable}
+        <<?>>
+        <<? it.selectionCriteriaList>>
+        \newpage
+        \section{Section G: Worst Product Selection Criteria}
+        <<! it.selectionCriteriaList :value:index>>
+            \begin{itemize} 
+            \item <<= value.name>>
+                \begin{itemize}
+                <<! value.descriptions :description:idex>>
+                    \item <<= description>>
+                <<!>>
+                \end{itemize}
+            \end{itemize}
+        <<!>>
+        <<?>>
+        \newpage
+        \section{Section E: Calculation Methodology}
+        The calculation Methodology is given as below:\\
+        The MAC(Maximum Allowed Carryover) limit calculations performed in this document are based on the principles outlined in the below reference documents:\\
+        \begin{itemize}
+        \item Fourman and Mullen, Determing Cleaning Validation Acceptance Limits for Pharmacautical Manufacturing Operations \dots{}
+        \item PDA Technical Report No. 29, Revised 2012 Points to Consider for Cleaning Validation TR29
+        \end{itemize}
+        Definition of MAC (Maximum Allowed Carryover) or Acceptable Residue Limit in the next product:\\
+        The acceptance level (i.e. concentration) of the target residue in the subsequently manufactured product may be called by different terms, but for this document that concentration will be called Maximum Allowed Carryover (abbreviated MAC).\\
+        This is an expression of the maximum concentration of residue allowed in that next product, as determined by medical, pharmacological, safety, stability and
+        or performance issues. For chemical residues (such as the drug active or cleaning agent), this concentration is typically given
+        as {\textmu}g/g or {\textmu}g/mL (or an equivalent expression depending on the units selected).\\
+        MAC is generally expressed in various forms. The terminology used in this document is given below.\\
+        MAC Surface Area = Maximum allowed residue limit in the next product batch per shared surface area across the product equipment contact surface area. This is generally expressed in mg per square inch\\
+        MAC Swab = residue concentration in the swab.\\
+        MAC Swab = (MAC Surface Area) * (Swabbed surface Area)\\
+        MAC Swab Extract = residue concentration in the swab.\\
+        MAC Swab Extract = (MAC Surface Area) * (Swabbed surface Area) / (Solvent Desorption Amount)\\
+        \newpage
+        \section{Section F1: Product Attributes}
+        \begin{tabularx}{\linewidth}{lc*{12}{>{\RaggedRight\arraybackslash}X}}
+                <<! it.products :value:index>>
+                    <<?  index === 0 >>
+                        \toprule
+                        <<= value.join("&") >>\\
+                        \endhead
+                    <<?>>       
+                    <<? index !== 0 >>
+                    \midrule
+                        <<= value.join("&")>>\\
+                    \addlinespace
+                    <<?>>
+                <<!>>
+                \bottomrule
+        \end{tabularx}    
+        \end{document}

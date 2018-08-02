@@ -1,0 +1,43 @@
+\documentclass{article}
+        \usepackage[left=1.5cm, right=5cm, top=2cm]{geometry}
+        \usepackage[utf8]{inputenc}
+        \usepackage{longtable,pdflscape,graphicx}
+        \usepackage{amsmath}
+        \usepackage{textcomp}
+        \renewcommand{\labelitemii}{$\star$}
+        \let\Item\item
+\newcommand\SpecialItem{\renewcommand\item[1][]{\Item[\textbullet~\bfseries##1]}}
+\renewcommand\enddescription{\endlist\global\let\item\Item}
+        \begin{document}
+        \pagenumbering{gobble}
+        \newpage
+        \section{Section B: Equipmentwise MAC and Worst Products}
+         <<!it.equipmentPage :value:index>>
+            <<? value.type === it.types.text>>
+                <<=value.data>>\\\\
+                <<?? value.type === it.types.table>>
+                    \begin{longtable}[l]{<<= value.columnWidths>>}\hline
+                    <<! value.data :values:ele>>
+                        <<=values.join("&")>>\\\hline
+                    <<!>>
+                    \end{longtable}
+                <<??>>
+            <<?>>
+        <<!>>
+        \newpage
+        \section{Section A: Product Attributes Table}
+        <<!it.page :value:index>>
+            <<? value.type === it.types.text>>
+                <<=value.data>>\\\\
+                <<?? value.type === it.types.table>>
+                    \begin{longtable}[l]{|p{2.5cm}| p{2.5cm}|}\hline
+                    <<! value.data :values:ele>>
+                        <<=values.name>> & <<=values.api_name>>\\\hline
+                    <<!>>
+                    \end{longtable}
+                <<??>>
+            <<?>>
+        <<!>>
+        \newpage
+        \section{Section G: Wo}
+        \end{document}
