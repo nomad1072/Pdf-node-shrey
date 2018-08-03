@@ -12,6 +12,8 @@ const doT = require('dot');
 const os = require('os')
 const latex = require('node-latex');
 const Mustache = require('mustache');
+const {amqpKey, queueName} = require('./config')
+const open = require('amqplib').connect(amqpKey);
 const _ = require('underscore');
 // const PdfPrinter = require("pdfmake/src/printer")
 // const printer = new PdfPrinter(fonts)
@@ -38,10 +40,53 @@ if(cluster.isMaster) {
     // });
     app.use(bodyParser.urlencoded({extended: true}));
     app.use(bodyParser.json());
-    app.get('/mac_protocol_template', mac_protocol_template);
+    app.get('/mac_protocol_template', (req, res) => {
+        publish(process.pid);
+        consumer();
+    });
     app.listen(8080, () => {
         console.log('Server started at 8080, ' + process.pid + ' is listening to all incoming requests');
     });
+}
+
+function startWorkers(pid) {
+    console.log(pid);
+    publish(pid);
+    consumer();
+}
+
+function publish(pid) {
+    open
+        .then(connection => connection.createChannel())
+        .then(channel => 
+            channel
+                .assertQueue(queueName)
+                .then(ok => channel.sendToQueue(queueName, Buffer.from(`this should contain report Object, ${pid}`)))
+        )
+        .catch(err => {
+            console.error(err);
+        });
+}
+
+function consumer() {
+    open
+        .then(connection => connection.createChannel())
+        .then(channel => 
+            channel.assertQueue(queueName).then(ok =>
+                channel.consume(queueName, msg => {
+                    if(msg !== null) {
+                        console.log(msg.content.toString());
+                        mac_protocol_template();
+                        channel.ack(msg);
+                    } else {
+                        console.log('No messages yet!');
+                    }
+                })
+            )
+        )
+        .catch(err => {
+            console.error(err);
+        });
 }
 
 
@@ -544,7 +589,6 @@ function fillEquipmentGroupWiseMAC(equipmentGroups, equipmentGroupWiseMAC, templ
 
 function fillEquipmentWiseCAMACTable(equipments, cleaningAgents, equipmentWiseMAC,template) {
     const headers = [["Equipment ID",`Equipment Name`, ...cleaningAgents.map(c => c.name)]];
-    console.log('Equipments: <<<<', equipments);
     const eqWiseMACData = equipments
     .filter(e => equipmentWiseMAC[e.id].cleaningAgentLimits)
     .map(e => {
@@ -712,7 +756,7 @@ function fillSelectionCriterias(selectionCriteria) {
     return str;
 }
 
-async function mac_protocol_template(req, res) {
+async function mac_protocol_template() {
         console.log('Process executing mac_protocol', process.pid);
         const sillyName = generateName();
         const equipments = reportObject.evaluation.snapshot.equipments;
@@ -908,9 +952,7 @@ async function mac_protocol_template(req, res) {
 
 function startTimer(name) {
     console.time(name);
-    console.log(`${name}: <<<`, process.memoryUsage());
     let stopTimer = function() {
-        console.log(`${name}: <<<`, process.memoryUsage());
         console.timeEnd(name);
     }
     return stopTimer;
