@@ -7,6 +7,9 @@ const fs = require('fs');
 const generateName = require('sillyname');
 const wkhtmltopdf = require('wkhtmltopdf');
 const pdfPath = path.join(__dirname, '/pdf');
+const newpdfPath = path.join(__dirname, '/pdfs');
+const {ReportGeneration} = require('./ReportGeneration');
+const execFile = require('child_process').execFile;
 // const PdfPrinter = require("pdfmake/src/printer")
 // const printer = new PdfPrinter(fonts)
 const doT = require('dot');
@@ -17,6 +20,8 @@ const Mustache = require('mustache');
 const _ = require('underscore');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
+
+const reportQueue = new ReportGeneration("cv report");
 
 Mustache.tags = ['<<', '>>'];
 _.templateSettings = {
@@ -248,7 +253,7 @@ function fillEquipmentsData(equipments) {
 function fillProductsData(products, template) {
     let headers = [["Name", "Product Id", "API", "Solubility Factor", "Cleanability Factor", "PDE", "Min TD", "Max TD", "Min BS", "Strength"]];
     let body = products.reduce((a,product) => {
-        for(let i = 0; i < 25550; i++) {
+        for(let i = 0; i < 25000; i++) {
             a.push([`${product.name}`, `${product.product_id}`, `${product.api_name}`, `${product.solubility_factor.value}`, `${Math.round(+product.cleanability_factor.value)}`, `${Math.round(+product.pde.value)}`, `${product.min_td.value}`, `${product.max_td.value}`, `${Math.round(+product.min_bs.value)}`, `${Math.round(+product.strength.value)}`])
         }
         return a;
@@ -517,7 +522,6 @@ function fillEquipmentGroupWiseMAC(equipmentGroups, equipmentGroupWiseMAC, templ
 
 function fillEquipmentWiseCAMACTable(equipments, cleaningAgents, equipmentWiseMAC,template) {
     const headers = [["Equipment ID",`Equipment Name`, ...cleaningAgents.map(c => c.name)]];
-    console.log('Equipments: <<<<', equipments);
     const eqWiseMACData = equipments
     .filter(e => equipmentWiseMAC[e.id].cleaningAgentLimits)
     .map(e => {
@@ -649,7 +653,7 @@ function getHeaders(widths) {
 
 function getData(table) {
     const data = table.reduce((a,b) => {
-        a += '\\hline\n'
+        a += '\n'
         a += b.join("&")
         a += '\\\\\n'
         a += '\\hline\n'
@@ -684,6 +688,62 @@ function fillSelectionCriterias(selectionCriteria) {
     });
     return str;
 }
+
+let index = 0;
+
+function getTemplateData() {
+    const equipments = reportObject.evaluation.snapshot.equipments;
+    const equipmentGroups = reportObject.evaluation.snapshot.equipmentGroups;
+    const cleaningAgents = reportObject.evaluation.snapshot.cleaningAgents;
+    const eqWiseRPN = reportObject.content.macCalculation.equipmentWiseWorstProduct;
+    const selectionCriteria = reportObject.evaluation.snapshot.selectionCriteria;
+    const products = reportObject.evaluation.snapshot.products;
+
+    const equipmentWiseMac = reportObject.content.macCalculation.macLimits.equipmentWiseMac;
+    const equipmentGroupWiseMac = reportObject.content.macCalculation.macLimits.equipmentGroupWiseMac;
+    const eqWiseMacTable = fillEquipmentWiseProductMACTable(equipments, equipmentWiseMac, true);
+    const eqGroupWiseMacTable = fillEquipmentGroupWiseMAC(equipmentGroups, equipmentGroupWiseMac, true);
+    const eqWiseCAMacTable = fillEquipmentWiseCAMACTable(equipments, cleaningAgents, equipmentWiseMac, true);
+    const eqWiseRPNTable = getEquipmentWiseWorstRPNProductTable(equipments, eqWiseRPN, products, selectionCriteria, true);
+    const productsTable = fillProductsData(products, true);
+
+    const template_data = {
+        eqWiseMacHeaders: getHeaders(["1.5cm", "2cm", "3cm", "3cm", "3cm", "3cm"]),
+        eqGroupWiseMacHeaders: getHeaders(["1.5cm", "3cm", "3cm", "3cm", "3cm"]),
+        eqWiseCAMacHeaders: getHeaders(["2cm", "2cm", ...cleaningAgents.map(c => "4cm")]),
+        eqWiseRPNHeaders: getHeaders(["3cm","3cm", ...selectionCriteria.map(sc => "3cm")]),
+        eqWiseMacData: getData(eqWiseMacTable),
+        eqGroupWiseMacData: getData(eqGroupWiseMacTable),
+        eqWiseCAMacData: getData(eqWiseCAMacTable),
+        eqWiseRPNData: getData(eqWiseRPNTable),
+        selectionCriteriaList: fillSelectionCriterias(selectionCriteriaDescription),
+        products: getData(productsTable),
+        productHeaders: getHeaders(["1.5cm", "2cm", "1.5cm", "1.5cm", "2cm", "2cm", "2cm", "2cm", "2cm", "2cm"])
+    };
+    return template_data;
+}
+
+reportQueue.forked.on("message", (data) => {
+    console.log('Data: <<<<<<<<', data);
+    if(data.status === "Done") {
+        reportQueue.dequeue();
+        if(reportQueue.size > 0) {
+            reportQueue.forked.send(reportQueue.queue[0]);
+        }
+    }
+});
+
+app.get('/queue', async (req, res) => {
+    let obj = {
+        title: 'Generate Report',
+        reason: 'test',
+        index: index++
+    };
+    
+    reportQueue.enqueue(obj);
+    console.log('Queued item call from router');
+    res.sendStatus(202);
+});
 
 app.get('/mac_protocol_template', async (req, res) => {
     const equipments = reportObject.evaluation.snapshot.equipments;
@@ -1140,4 +1200,5 @@ app.get('/html', async (req, res) => {
 
 app.listen(8080, () => {
     console.log('Server started at 8080');
-})
+});
+
