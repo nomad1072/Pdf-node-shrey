@@ -1,6 +1,4 @@
-const {fork} = require('child_process');
-const EventEmitter = require('events');
-const emitter = new EventEmitter();
+const { fork } = require('child_process');
 
 class ReportGeneration {
     constructor(name) {
@@ -14,21 +12,17 @@ class ReportGeneration {
         // Fetch Report Object
         this.queue.push(details);
         this.size++;
-        console.log('Queue Size: <<<<<', this.size);
-        // console.log('Queue: <<<<<', JSON.stringify(this.queue, null, 3));
+        console.log('Queue Size after queue: <<<<<', this.size);
         this.forked.send(details);
     }
 
     dequeue() {
         this.queue.shift();
-        this.size--;
+        this.size > 0 && this.size--;
         console.log('Queue Size after dequeue: <<<<<', this.size);
     }
 }
 
-
-
 module.exports = {
-     ReportGeneration,
-    emitter
+    ReportGeneration
 };

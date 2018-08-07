@@ -9,7 +9,7 @@ const MACMetrics = {
   function fillProductsData(products, template) {
     let headers = [["Name", "Product Id", "API", "Solubility Factor", "Cleanability Factor", "PDE", "Min TD", "Max TD", "Min BS", "Strength"]];
     let body = products.reduce((a,product) => {
-        for(let i = 0; i < 25000; i++) {
+        for(let i = 0; i < 25550; i++) {
             a.push([`${product.name}`, `${product.product_id}`, `${product.api_name}`, `${product.solubility_factor.value}`, `${Math.round(+product.cleanability_factor.value)}`, `${Math.round(+product.pde.value)}`, `${product.min_td.value}`, `${product.max_td.value}`, `${Math.round(+product.min_bs.value)}`, `${Math.round(+product.strength.value)}`])
         }
         return a;
