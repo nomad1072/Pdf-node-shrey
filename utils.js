@@ -288,7 +288,12 @@ function getTemplateData() {
         eqWiseRPNData: getData(eqWiseRPNTable),
         selectionCriteriaList: fillSelectionCriterias(selectionCriteriaDescription),
         products: getData(productsTable),
-        productHeaders: getHeaders(["1.5cm", "2cm", "1.5cm", "1.5cm", "2cm", "2cm", "2cm", "2cm", "2cm", "2cm"])
+        productHeaders: getHeaders(["1.5cm", "2cm", "1.5cm", "1.5cm", "2cm", "2cm", "2cm", "2cm", "2cm", "2cm"]),
+        siddharth: {
+          name: {
+            name:'siddharth'
+          }
+        }
     };
     return template_data;
 }

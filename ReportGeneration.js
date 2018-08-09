@@ -1,27 +1,33 @@
-const { fork } = require('child_process');
-
+const kue = require('kue');
+const {doTask} = require('./report');
 class ReportGeneration {
     constructor(name) {
-        this.queue = [];
-        this.name = name;
-        this.size = 0;
-        this.forked = fork('./report.js');
+      this.queue = kue.createQueue();
+      this.name = name;
     }
-
-    enqueue(details) {
-        // Fetch Report Object
-        this.queue.push(details);
-        this.size++;
-        console.log('Queue Size after queue: <<<<<', this.size);
-        this.forked.send(details);
+  
+    enqueue(details, jobType) {
+      const job = this.queue
+        .create(jobType, {
+          reportID: details.id,
+          email: details.email,
+          reason: details.reason
+        })
+        .save(err => {
+          if (!err) {
+            console.log(job.id);
+          } else {
+            logger.error("Unable to enqueue job");
+          }
+        });
     }
-
-    dequeue() {
-        this.queue.shift();
-        this.size > 0 && this.size--;
-        console.log('Queue Size after dequeue: <<<<<', this.size);
+  
+    processItem(type) {
+      this.queue.process(type, async (job, done) => {
+        await doTask(job.data, done);
+      });
     }
-}
+  }
 
 module.exports = {
     ReportGeneration
